@@ -2,7 +2,7 @@
 #include <QByteArray>
 #include <QDebug>
 #include <QString>
-//#include <QCryptographicHash>
+#include <QCryptographicHash>
 #include "qaesencryption.h"
 
 //const uint8_t iv[]   = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
@@ -20,14 +20,22 @@ int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
-    qDebug() << "START";
     QByteArray srcString = "Hello World";
-    QByteArray key = "1234";
-    QAESEncryption encryption(QAESEncryption::AES_128, QAESEncryption::ECB);
-    QByteArray encodedString = encryption.encode(srcString, key);
+    QString key = "1234";
 
-    qDebug() << "Encoded string is" << QString(encodedString);
-    //qDebug() << "Decoded string is" << decodeText(encodedString, key);
+    QCryptographicHash hash(QCryptographicHash::Md5);
+    hash.addData(key.toUtf8());
+    QByteArray keyData = hash.result();
+
+
+    QAESEncryption encryption(QAESEncryption::AES_128, QAESEncryption::ECB);
+    QByteArray encodedString = encryption.encode(srcString, keyData);
+    QByteArray decodedString = encryption.decode(encodedString, keyData);
+
+    qDebug() << "Plain Text" << srcString;
+    //qDebug() << "Crypt" << QString(encodedString);
+    qDebug() << "Decoded string is " << QString(decodedString);
+
     return 0;
 }
 /*
