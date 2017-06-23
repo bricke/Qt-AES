@@ -1,2 +1,6 @@
 # Qt-AES
-AES Encryption native Qt
+AES Encryption in Qt.
+Porting of the Tiny-AES-C
+
+## Usage
+To Do
