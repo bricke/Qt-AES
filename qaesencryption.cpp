@@ -326,10 +326,8 @@ QByteArray QAESEncryption::encode(const QByteArray rawText, const QByteArray key
    if (m_mode == CBC && iv.isNull())
        return QByteArray();
 
-  //qDebug() << "key" << print(key);
   QByteArray expandedKey = expandKey(key);
 
-  // The next function call encrypts the PlainText with the Key using AES algorithm.
   return cipher(expandedKey, rawText);
 }
 
