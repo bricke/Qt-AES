@@ -130,18 +130,18 @@ QByteArray QAESEncryption::expandKey(const QByteArray key)
 // The round key is added to the state by an XOR function.
 void QAESEncryption::addRoundKey(quint8 round, const QByteArray expKey)
 {
-  for(int i=0; i < 16; i++) {
-      char value = m_state->at(i) ^ expKey.at(round * m_nb * 4 + (i/4) * m_nb + (i%4));
-      m_state->replace(i, 1, &value);
-  }
+  QByteArray::iterator it = m_state->begin();
+  for(int i=0; i < 16; i++)
+      it[i] = (quint8)it[i] ^ (quint8)expKey.at(round * m_nb * 4 + (i/4) * m_nb + (i%4));
 }
 
 // The SubBytes Function Substitutes the values in the
 // state matrix with values in an S-box.
 void QAESEncryption::subBytes()
 {
+  QByteArray::iterator it = m_state->begin();
   for(int i = 0; i < 16; i++)
-    m_state->replace(i, getSBoxValue((quint8) m_state->at(i)));
+    it[i] = getSBoxValue((quint8) it[i]);
 }
 
 // The ShiftRows() function shifts the rows in the state to the left.
