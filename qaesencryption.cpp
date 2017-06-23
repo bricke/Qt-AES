@@ -30,6 +30,7 @@ QAESEncryption::QAESEncryption(QAESEncryption::AES level, QAESEncryption::MODE m
         m_keyLen = aes.keylen;
         m_nr = aes.nr;
         m_expandedKey = aes.expandedKey;
+        qDebug() << "AES192";
         }
         break;
     case AES_256: {
@@ -38,6 +39,7 @@ QAESEncryption::QAESEncryption(QAESEncryption::AES level, QAESEncryption::MODE m
         m_keyLen = aes.keylen;
         m_nr = aes.nr;
         m_expandedKey = aes.expandedKey;
+        qDebug() << "AES256";
         }
         break;
     default: {
@@ -46,6 +48,7 @@ QAESEncryption::QAESEncryption(QAESEncryption::AES level, QAESEncryption::MODE m
         m_keyLen = aes.keylen;
         m_nr = aes.nr;
         m_expandedKey = aes.expandedKey;
+        qDebug() << "Defaulting to AES128";
         }
         break;
     }
@@ -60,13 +63,7 @@ QByteArray QAESEncryption::expandKey(const QByteArray key)
   qDebug() << "Key expansion before" << roundKey.size();
 
   // The first round key is the key itself.
-  /*for(i = 0; i < m_nk; ++i)
-  {
-    roundKey.replace((i * 4) + 0, (quint8) key.at((i * 4) + 0));
-    roundKey.replace((i * 4) + 1, (quint8) key.at((i * 4) + 1));
-    roundKey.replace((i * 4) + 2, (quint8) key.at((i * 4) + 2));
-    roundKey.replace((i * 4) + 3, (quint8) key.at((i * 4) + 3));
-  }*/
+  // ...
 
   // All other round keys are found from the previous round keys.
   //i == Nk
@@ -110,6 +107,7 @@ QByteArray QAESEncryption::expandKey(const QByteArray key)
     {
       // Function Subword()
       {
+        qDebug() << "AES_256";
         tempa[0] = getSBoxValue(tempa[0]);
         tempa[1] = getSBoxValue(tempa[1]);
         tempa[2] = getSBoxValue(tempa[2]);
@@ -122,7 +120,7 @@ QByteArray QAESEncryption::expandKey(const QByteArray key)
     roundKey.insert(i * 4 + 3, roundKey.at((i - m_nk) * 4 + 3) ^ tempa[3]);
   }
 
-  qDebug() << "Key expansion after" << roundKey.size();
+  //qDebug() << print(roundKey);
   return roundKey;
 }
 
@@ -152,14 +150,14 @@ void QAESEncryption::shiftRows()
     QByteArray::iterator it = m_state->begin();
     quint8 temp;
 
-     //Shift 1
+     //Shift 1 to left
     temp = (quint8) it[4];
     it[4] = it[4+1];
     it[4+1] = it[4+2];
     it[4+2] = it[4+3];
     it[4+3] = temp;
 
-    //Shift 2
+    //Shift 2 to left
     temp = (quint8) it[8];
     it[8] = it[8+2];
     it[8+2] = temp;
@@ -167,7 +165,7 @@ void QAESEncryption::shiftRows()
     it[8+1] = it[8+3];
     it[8+3] = temp;
 
-    //Shift 3
+    //Shift 3 to left
     temp = (quint8) it[12];
     it[12] = it[12+3];
     it[12+3] = it[12+2];
@@ -218,7 +216,7 @@ void QAESEncryption::invMixColumns()
     c = (quint8) it[i+2];
     d = (quint8) it[i+3];
 
-    it[i] = (quint8) (Multiply(a, 0x0e) ^ Multiply(b, 0x0b) ^ Multiply(c, 0x0d) ^ Multiply(d, 0x09));
+    it[i]   = (quint8) (Multiply(a, 0x0e) ^ Multiply(b, 0x0b) ^ Multiply(c, 0x0d) ^ Multiply(d, 0x09));
     it[i+1] = (quint8) (Multiply(a, 0x09) ^ Multiply(b, 0x0e) ^ Multiply(c, 0x0b) ^ Multiply(d, 0x0d));
     it[i+2] = (quint8) (Multiply(a, 0x0d) ^ Multiply(b, 0x09) ^ Multiply(c, 0x0e) ^ Multiply(d, 0x0b));
     it[i+3] = (quint8) (Multiply(a, 0x0b) ^ Multiply(b, 0x0d) ^ Multiply(c, 0x09) ^ Multiply(d, 0x0e));
@@ -254,7 +252,7 @@ void QAESEncryption::invShiftRows()
     it[8+3] = it[8+1];
     it[8+1] = temp;
 
-    //Shift 3 //PROBABLY WRONG!!
+    //Shift 3
     temp = (quint8) it[12+3];
     it[12+3] = it[12];
     it[12] = it[12+1];
@@ -275,7 +273,7 @@ QByteArray QAESEncryption::cipher(const QByteArray expKey, const QByteArray in)
   // Add the First round key to the state before starting the rounds.
   addRoundKey(0, expKey);
 
-  qDebug() << print(output);
+  //qDebug() << print(output);
   // There will be Nr rounds.
   // The first Nr-1 rounds are identical.
   // These Nr-1 rounds are executed in the loop below.
@@ -328,8 +326,8 @@ QByteArray QAESEncryption::invCipher(const QByteArray expKey, const QByteArray i
 
 QByteArray QAESEncryption::encode(const QByteArray rawText, const QByteArray key, const QByteArray iv)
 {
-   if (m_mode == CBC && iv == NULL)
-       return NULL; //EMIT ERROR!
+   if (m_mode == CBC && iv.isNull())
+       return QByteArray();
 
   //qDebug() << "key" << print(key);
   QByteArray expandedKey = expandKey(key);
@@ -348,8 +346,8 @@ QString QAESEncryption::print(QByteArray in)
 
 QByteArray QAESEncryption::decode(const QByteArray rawText, const QByteArray key, const QByteArray iv)
 {
-   if (m_mode == CBC && iv == NULL)
-       return NULL; //EMIT ERROR!
+   if (m_mode == CBC && iv.isNull())
+       return QByteArray();
 
   QByteArray expandedKey = expandKey(key);
 
