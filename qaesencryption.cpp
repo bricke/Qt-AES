@@ -178,27 +178,24 @@ void QAESEncryption::shiftRows()
 void QAESEncryption::mixColumns()
 {
   QByteArray::iterator it = m_state->begin();
-  quint8 Tmp,Tm,t;
-  for(int i = 0; i < 16; i+=4)
+  quint8 tmp,t;
+
+  for(int i = 0; i < 16; i += 4)
   {
-    t   = (quint8) it[i];
-    Tmp = (quint8) it[i] ^ (quint8) it[i+1] ^ (quint8) it[i+2] ^ (quint8) it[i+3] ;
+    t   = it[i];
+    tmp =  it[i] ^ it[i+1] ^ it[i+2] ^ it[i+3] ;
 
-    Tm  = (quint8) it[i] ^ (quint8) it[i+1];
-    Tm = xTime(Tm);
-    it[i] = (quint8) it[i] ^ Tm ^ Tmp;
+    Tm = xTime( it[i] ^ it[i+1] );
+    it[i] ^= Tm ^ tmp;
 
-    Tm  = (quint8) it[i+1] ^ (quint8) it[i+2];
-    Tm = xTime(Tm);
-    it[i+1] = (quint8) it[i+1] ^ Tm ^ Tmp;
+    Tm = xTime( it[i+1] ^ it[i+2]);
+    it[i+1] ^= Tm ^ tmp;
 
-    Tm  = (quint8) it[i+2] ^ (quint8) it[i+3];
-    Tm = xTime(Tm);
-    it[i+2] = (quint8) it[i+2] ^ Tm ^ Tmp;
+    Tm = xTime( it[i+2] ^ it[i+3]);
+    it[i+2] ^= Tm ^ tmp;
 
-    Tm  = (quint8) it[i+3] ^ t;
-    Tm = xTime(Tm);
-    it[i+3] = (quint8)  it[i+3] ^ Tm ^ Tmp;
+    Tm = xTime(it[i+3] ^ t);
+    it[i+3] ^= Tm ^ tmp;
   }
 }
 
