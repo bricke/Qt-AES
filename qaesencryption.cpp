@@ -178,24 +178,24 @@ void QAESEncryption::shiftRows()
 void QAESEncryption::mixColumns()
 {
   QByteArray::iterator it = m_state->begin();
-  quint8 tmp,t;
+  quint8 tmp, tm, t;
 
   for(int i = 0; i < 16; i += 4)
   {
     t   = it[i];
     tmp =  it[i] ^ it[i+1] ^ it[i+2] ^ it[i+3] ;
 
-    Tm = xTime( it[i] ^ it[i+1] );
-    it[i] ^= Tm ^ tmp;
+    tm = xTime( it[i] ^ it[i+1] );
+    it[i] ^= tm ^ tmp;
 
-    Tm = xTime( it[i+1] ^ it[i+2]);
-    it[i+1] ^= Tm ^ tmp;
+    tm = xTime( it[i+1] ^ it[i+2]);
+    it[i+1] ^= tm ^ tmp;
 
-    Tm = xTime( it[i+2] ^ it[i+3]);
-    it[i+2] ^= Tm ^ tmp;
+    tm = xTime( it[i+2] ^ it[i+3]);
+    it[i+2] ^= tm ^ tmp;
 
-    Tm = xTime(it[i+3] ^ t);
-    it[i+3] ^= Tm ^ tmp;
+    tm = xTime(it[i+3] ^ t);
+    it[i+3] ^= tm ^ tmp;
   }
 }
 
