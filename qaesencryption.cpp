@@ -60,7 +60,6 @@ QByteArray QAESEncryption::expandKey(const QByteArray key)
   int i, k;
   quint8 tempa[4]; // Used for the column/row operations
   QByteArray roundKey(key);
-  qDebug() << "Key expansion before" << roundKey.size();
 
   // The first round key is the key itself.
   // ...
@@ -261,7 +260,7 @@ void QAESEncryption::invShiftRows()
 QByteArray QAESEncryption::cipher(const QByteArray expKey, const QByteArray in)
 {
 
-  //m_state is the input buffer.... handle it!
+  //m_state is the input buffer...
   QByteArray output(in);
   m_state = &output;
 
@@ -287,6 +286,7 @@ QByteArray QAESEncryption::cipher(const QByteArray expKey, const QByteArray in)
   subBytes();
   shiftRows();
   addRoundKey(m_nr, expKey);
+
 
   return output;
 }
@@ -323,28 +323,52 @@ QByteArray QAESEncryption::invCipher(const QByteArray expKey, const QByteArray i
 
 QByteArray QAESEncryption::encode(const QByteArray rawText, const QByteArray key, const QByteArray iv)
 {
-   if (m_mode == CBC && iv.isNull())
+    if (m_mode == CBC && iv.isNull())
        return QByteArray();
 
-  QByteArray expandedKey = expandKey(key);
+    QByteArray ret;
+    QByteArray expandedKey = expandKey(key);
+    QByteArray alignedText(rawText);
 
-  return cipher(expandedKey, rawText);
-}
+    alignedText.append(getPadding(rawText.size(), m_keyLen), 0); //filling the array with zeros
 
-QString QAESEncryption::print(QByteArray in)
-{
-    QString ret="";
-    for (int i=0; i < in.size();i++)
-        ret.append(QString("0x%1 ").arg(QString::number((quint8)in.at(i), 16)));
+    for(int i=0; i < alignedText.size(); i+= m_keyLen)
+    {
+        ret.append(cipher(expandedKey, alignedText.mid(i, m_keyLen)));
+        qDebug() << print(ret.mid(i, m_keyLen)); //test
+    }
+    qDebug() << "--";
     return ret;
 }
 
 QByteArray QAESEncryption::decode(const QByteArray rawText, const QByteArray key, const QByteArray iv)
 {
-   if (m_mode == CBC && iv.isNull())
+    if (m_mode == CBC && iv.isNull())
        return QByteArray();
 
-  QByteArray expandedKey = expandKey(key);
+    QByteArray ret;
+    QByteArray expandedKey = expandKey(key);
+    QByteArray alignedText(rawText);
 
-  return invCipher(expandedKey, rawText);
+    alignedText.append(getPadding(rawText.size(), m_keyLen), 0); //filling the array with zeros
+
+    for(int i=0; i < alignedText.size(); i+= m_keyLen)
+    {
+        ret.append(invCipher(expandedKey, alignedText.mid(i, m_keyLen)));
+        qDebug() << print(ret.mid(i, m_keyLen)); //test
+    }
+    qDebug() << "--";
+    return ret;
+}
+
+QString QAESEncryption::print(QByteArray in)
+{
+    QString ret="";
+    for (int i=0; i < in.size();i++) {
+        QString number = QString::number((quint8)in.at(i), 16);
+        if (number.size()==1)
+            number.insert(0, "0");
+        ret.append(QString("%1, ").arg(number));
+    }
+    return ret;
 }

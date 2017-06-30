@@ -28,3 +28,6 @@ HEADERS += \
     tiny-AES-C/aes.h \
     qaesencryption.h
 
+DISTFILES += \
+    sample.txt
+

@@ -133,6 +133,10 @@ private:
     inline quint8 xTime(quint8 x){
       return ((x<<1) ^ (((x>>7) & 1) * 0x1b));
     }
+
+    inline int getPadding(int currSize, int alignment) {
+        return (alignment - currSize % alignment) % alignment;
+    }
 };
 
 #endif // QAESENCRYPTION_H
