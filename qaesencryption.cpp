@@ -128,8 +128,9 @@ QByteArray QAESEncryption::expandKey(const QByteArray key)
 void QAESEncryption::addRoundKey(quint8 round, const QByteArray expKey)
 {
   QByteArray::iterator it = m_state->begin();
-  for(int i=0; i < 16; i++)
-      it[i] = (quint8)it[i] ^ (quint8)expKey.at(round * m_nb * 4 + (i/4) * m_nb + (i%4));
+  for(int i=0; i < 16; ++i) {
+      it[i] = it[i] ^ expKey.at(round * m_nb * 4 + (i/4) * m_nb + (i%4));
+  }
 }
 
 // The SubBytes Function Substitutes the values in the
@@ -287,7 +288,6 @@ QByteArray QAESEncryption::cipher(const QByteArray expKey, const QByteArray in)
   shiftRows();
   addRoundKey(m_nr, expKey);
 
-
   return output;
 }
 
@@ -368,7 +368,7 @@ QString QAESEncryption::print(QByteArray in)
         QString number = QString::number((quint8)in.at(i), 16);
         if (number.size()==1)
             number.insert(0, "0");
-        ret.append(QString("%1, ").arg(number));
+        ret.append(QString("%1").arg(number));
     }
     return ret;
 }
