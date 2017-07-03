@@ -95,7 +95,6 @@ QByteArray QAESEncryption::expandKey(const QByteArray key)
     {
       // Function Subword()
       {
-        qDebug() << "AES_256";
         tempa[0] = getSBoxValue(tempa[0]);
         tempa[1] = getSBoxValue(tempa[1]);
         tempa[2] = getSBoxValue(tempa[2]);

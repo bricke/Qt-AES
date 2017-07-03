@@ -16,7 +16,7 @@ QString print(QByteArray in)
     return ret;
 }
 
-bool testECBDecrypt()
+bool testECB128Decrypt()
 {
     QByteArray hexText, keyHex, outputHex;
     QAESEncryption encryption(QAESEncryption::AES_128, QAESEncryption::ECB);
@@ -39,7 +39,7 @@ bool testECBDecrypt()
     return false;
 }
 
-bool testECBCrypt()
+bool testECB128Crypt()
 {
     QByteArray hexText, keyHex, outputHex;
     QAESEncryption encryption(QAESEncryption::AES_128, QAESEncryption::ECB);
@@ -64,12 +64,39 @@ bool testECBCrypt()
     return false;
 }
 
+bool testECB256Crypt()
+{
+    QByteArray hexText, keyHex, outputHex;
+    QAESEncryption encryption(QAESEncryption::AES_256, QAESEncryption::ECB);
+
+    uint8_t key[32] = { 0x60, 0x3d, 0xeb, 0x10, 0x15, 0xca, 0x71, 0xbe, 0x2b, 0x73, 0xae, 0xf0, 0x85, 0x7d, 0x77, 0x81,
+                      0x1f, 0x35, 0x2c, 0x07, 0x3b, 0x61, 0x08, 0xd7, 0x2d, 0x98, 0x10, 0xa3, 0x09, 0x14, 0xdf, 0xf4 };
+    uint8_t text[16]  = {0x6b, 0xc1, 0xbe, 0xe2, 0x2e, 0x40, 0x9f, 0x96, 0xe9, 0x3d, 0x7e, 0x11, 0x73, 0x93, 0x17, 0x2a};
+    uint8_t output[16] = { 0xf3, 0xee, 0xd1, 0xbd, 0xb5, 0xd2, 0xa0, 0x3c, 0x06, 0x4b, 0x5a, 0x7e, 0x3d, 0xb1, 0x81, 0xf8 };
+
+    for (int i=0; i<16 ; i++)
+    {
+        hexText.append(text[i]);
+        outputHex.append(output[i]);
+    }
+    for (int i=0; i<32 ; i++)
+        keyHex.append(key[i]);
+
+    QByteArray encodedHex = encryption.encode(hexText, keyHex);
+    encodedHex.truncate(16);
+
+    if (outputHex == encodedHex)
+        return true;
+    return false;
+}
+
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
-    Q_ASSERT(testECBCrypt());
-    Q_ASSERT(testECBDecrypt());
+    Q_ASSERT(testECB128Crypt());
+    Q_ASSERT(testECB128Decrypt());
+    Q_ASSERT(testECB256Crypt());
 
     return 0;
 }

@@ -10,7 +10,6 @@ CONFIG -= app_bundle
 TEMPLATE = app
 
 SOURCES += main.cpp \
-    tiny-AES-C/aes.c \
     qaesencryption.cpp
 
 # The following define makes your compiler emit warnings if you use
@@ -25,9 +24,5 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 HEADERS += \
-    tiny-AES-C/aes.h \
     qaesencryption.h
-
-DISTFILES += \
-    sample.txt
 
