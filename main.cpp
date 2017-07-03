@@ -45,6 +45,7 @@ int main(int argc, char *argv[])
     qDebug() << "";
     qDebug() << "Decoded text is " << print(decodedHex);
 
+
     qDebug() << "\n=======================STRING=========================";
 
     QString keyString = "25f9e794323b453885f5181f1b624d0b";
@@ -57,7 +58,7 @@ int main(int argc, char *argv[])
     qDebug() << "";
     qDebug() << "Crypt HEX" << print(encodedString);
     qDebug() << "";
-    qDebug() << "Decoded string is " << QString::fromLocal8Bit(decodedString);
+    qDebug() << "Decoded Text " << QString::fromLocal8Bit(decodedString);
 
     return 0;
 }

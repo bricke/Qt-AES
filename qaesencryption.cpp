@@ -1,14 +1,6 @@
 #include "qaesencryption.h"
 #include <QDebug>
 
-#define Multiply(x, y)                                \
-      (  ((y & 1) * x) ^                              \
-      ((y>>1 & 1) * xTime(x)) ^                       \
-      ((y>>2 & 1) * xTime(xTime(x))) ^                \
-      ((y>>3 & 1) * xTime(xTime(xTime(x)))) ^         \
-      ((y>>4 & 1) * xTime(xTime(xTime(xTime(x))))))   \
-
-
 QAESEncryption::QAESEncryption(QAESEncryption::AES level, QAESEncryption::MODE mode) : m_level(level), m_mode(mode)
 {
     m_state = NULL;
@@ -113,13 +105,11 @@ QByteArray QAESEncryption::expandKey(const QByteArray key)
         tempa[3] = getSBoxValue(tempa[3]);
       }
     }
-    roundKey.insert(i * 4 + 0, (quint8)roundKey.at((i - m_nk) * 4 + 0) ^ tempa[0]);
-    roundKey.insert(i * 4 + 1, (quint8)roundKey.at((i - m_nk) * 4 + 1) ^ tempa[1]);
-    roundKey.insert(i * 4 + 2, (quint8)roundKey.at((i - m_nk) * 4 + 2) ^ tempa[2]);
-    roundKey.insert(i * 4 + 3, (quint8)roundKey.at((i - m_nk) * 4 + 3) ^ tempa[3]);
+    roundKey.insert(i * 4 + 0, (quint8) roundKey.at((i - m_nk) * 4 + 0) ^ tempa[0]);
+    roundKey.insert(i * 4 + 1, (quint8) roundKey.at((i - m_nk) * 4 + 1) ^ tempa[1]);
+    roundKey.insert(i * 4 + 2, (quint8) roundKey.at((i - m_nk) * 4 + 2) ^ tempa[2]);
+    roundKey.insert(i * 4 + 3, (quint8) roundKey.at((i - m_nk) * 4 + 3) ^ tempa[3]);
   }
-
-  //qDebug() << print(roundKey);
   return roundKey;
 }
 
@@ -139,7 +129,7 @@ void QAESEncryption::subBytes()
 {
   QByteArray::iterator it = m_state->begin();
   for(int i = 0; i < 16; i++)
-    it[i] = getSBoxValue((quint8)it[i]);
+    it[i] = getSBoxValue((quint8) it[i]);
 }
 
 // The ShiftRows() function shifts the rows in the state to the left.
@@ -149,28 +139,29 @@ void QAESEncryption::shiftRows()
 {
     QByteArray::iterator it = m_state->begin();
     quint8 temp;
+    //Keep in mind that QByteArray is column-driven!!
 
      //Shift 1 to left
-    temp    = (quint8)it[4];
-    it[4]   = (quint8)it[4+1];
-    it[4+1] = (quint8)it[4+2];
-    it[4+2] = (quint8)it[4+3];
-    it[4+3] = (quint8)temp;
+    temp    = (quint8)it[1];
+    it[1]   = (quint8)it[5];
+    it[5] = (quint8)it[9];
+    it[9] = (quint8)it[13];
+    it[13] = (quint8)temp;
 
     //Shift 2 to left
-    temp    = (quint8)it[8];
-    it[8]   = (quint8)it[8+2];
-    it[8+2] = (quint8)temp;
-    temp    = (quint8)it[8+1];
-    it[8+1] = (quint8)it[8+3];
-    it[8+3] = (quint8)temp;
+    temp    = (quint8)it[2];
+    it[2]   = (quint8)it[10];
+    it[10] = (quint8)temp;
+    temp    = (quint8)it[6];
+    it[6] = (quint8)it[14];
+    it[14] = (quint8)temp;
 
     //Shift 3 to left
-    temp     = (quint8)it[12];
-    it[12]   = (quint8)it[12+3];
-    it[12+3] = (quint8)it[12+2];
-    it[12+2] = (quint8)it[12+1];
-    it[12+1] = (quint8)temp;
+    temp     = (quint8)it[3];
+    it[3]   = (quint8)it[15];
+    it[15] = (quint8)it[11];
+    it[11] = (quint8)it[7];
+    it[7] = (quint8)temp;
 }
 
 // MixColumns function mixes the columns of the state matrix
@@ -213,10 +204,10 @@ void QAESEncryption::invMixColumns()
     c = (quint8) it[i+2];
     d = (quint8) it[i+3];
 
-    it[i]   = (quint8) (Multiply(a, 0x0e) ^ Multiply(b, 0x0b) ^ Multiply(c, 0x0d) ^ Multiply(d, 0x09));
-    it[i+1] = (quint8) (Multiply(a, 0x09) ^ Multiply(b, 0x0e) ^ Multiply(c, 0x0b) ^ Multiply(d, 0x0d));
-    it[i+2] = (quint8) (Multiply(a, 0x0d) ^ Multiply(b, 0x09) ^ Multiply(c, 0x0e) ^ Multiply(d, 0x0b));
-    it[i+3] = (quint8) (Multiply(a, 0x0b) ^ Multiply(b, 0x0d) ^ Multiply(c, 0x09) ^ Multiply(d, 0x0e));
+    it[i]   = (quint8) (multiply(a, 0x0e) ^ multiply(b, 0x0b) ^ multiply(c, 0x0d) ^ multiply(d, 0x09));
+    it[i+1] = (quint8) (multiply(a, 0x09) ^ multiply(b, 0x0e) ^ multiply(c, 0x0b) ^ multiply(d, 0x0d));
+    it[i+2] = (quint8) (multiply(a, 0x0d) ^ multiply(b, 0x09) ^ multiply(c, 0x0e) ^ multiply(d, 0x0b));
+    it[i+3] = (quint8) (multiply(a, 0x0b) ^ multiply(b, 0x0d) ^ multiply(c, 0x09) ^ multiply(d, 0x0e));
   }
 }
 
@@ -234,27 +225,29 @@ void QAESEncryption::invShiftRows()
     QByteArray::iterator it = m_state->begin();
     uint8_t temp;
 
+    //Keep in mind that QByteArray is column-driven!!
+
     //Shift 1 to right
-    temp    = (quint8)it[4+3];
-    it[4+3] = (quint8)it[4+2];
-    it[4+2] = (quint8)it[4+1];
-    it[4+1] = (quint8)it[4];
-    it[4]   = (quint8)temp;
+    temp    = (quint8)it[13];
+    it[13] = (quint8)it[9];
+    it[9] = (quint8)it[5];
+    it[5] = (quint8)it[1];
+    it[1]   = (quint8)temp;
 
     //Shift 2
-    temp    = (quint8)it[8+2];
-    it[8+2] = (quint8)it[8];
-    it[8]   = (quint8)temp;
-    temp    = (quint8)it[8+3];
-    it[8+3] = (quint8)it[8+1];
-    it[8+1] = (quint8)temp;
+    temp    = (quint8)it[10];
+    it[10] = (quint8)it[2];
+    it[2]   = (quint8)temp;
+    temp    = (quint8)it[14];
+    it[14] = (quint8)it[6];
+    it[6] = (quint8)temp;
 
     //Shift 3
-    temp     = (quint8)it[12+3];
-    it[12+3] = (quint8)it[12];
-    it[12]   = (quint8)it[12+1];
-    it[12+1] = (quint8)it[12+2];
-    it[12+2] = (quint8)temp;
+    temp     = (quint8)it[15];
+    it[15] = (quint8)it[3];
+    it[3]   = (quint8)it[7];
+    it[7] = (quint8)it[11];
+    it[11] = (quint8)temp;
 }
 
 // Cipher is the main function that encrypts the PlainText.
@@ -268,7 +261,6 @@ QByteArray QAESEncryption::cipher(const QByteArray expKey, const QByteArray in)
   // Add the First round key to the state before starting the rounds.
   addRoundKey(0, expKey);
 
-  //qDebug() << print(output);
   // There will be Nr rounds.
   // The first Nr-1 rounds are identical.
   // These Nr-1 rounds are executed in the loop below.
@@ -349,17 +341,5 @@ QByteArray QAESEncryption::decode(const QByteArray rawText, const QByteArray key
     for(int i=0; i < alignedText.size(); i+= m_keyLen)
         ret.append(invCipher(expandedKey, alignedText.mid(i, m_keyLen)));
 
-    return ret;
-}
-
-QString QAESEncryption::print(QByteArray in)
-{
-    QString ret="";
-    for (int i=0; i < in.size();i++) {
-        QString number = QString::number((quint8)in.at(i), 16);
-        if (number.size()==1)
-            number.insert(0, "0");
-        ret.append(QString("%1").arg(number));
-    }
     return ret;
 }

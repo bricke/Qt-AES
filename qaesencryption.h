@@ -25,8 +25,6 @@ public:
     QByteArray encode(const QByteArray rawText, const QByteArray key, const QByteArray iv = NULL);
     QByteArray decode(const QByteArray rawText, const QByteArray key, const QByteArray iv = NULL);
 
-    QString print(QByteArray in);
-
 signals:
 
 public slots:
@@ -132,6 +130,10 @@ private:
 
     inline quint8 xTime(quint8 x){
       return ((x<<1) ^ (((x>>7) & 1) * 0x1b));
+    }
+
+    inline quint8 multiply(quint8 x, quint8 y){
+      return (((y & 1) * x) ^ ((y>>1 & 1) * xTime(x)) ^ ((y>>2 & 1) * xTime(xTime(x))) ^ ((y>>3 & 1) * xTime(xTime(xTime(x)))) ^ ((y>>4 & 1) * xTime(xTime(xTime(xTime(x))))));
     }
 
     inline int getPadding(int currSize, int alignment) {
