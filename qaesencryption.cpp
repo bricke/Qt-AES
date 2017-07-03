@@ -13,7 +13,6 @@ QAESEncryption::QAESEncryption(QAESEncryption::AES level, QAESEncryption::MODE m
         m_keyLen = aes.keylen;
         m_nr = aes.nr;
         m_expandedKey = aes.expandedKey;
-        qDebug() << "AES128";
         }
         break;
     case AES_192: {
@@ -22,7 +21,6 @@ QAESEncryption::QAESEncryption(QAESEncryption::AES level, QAESEncryption::MODE m
         m_keyLen = aes.keylen;
         m_nr = aes.nr;
         m_expandedKey = aes.expandedKey;
-        qDebug() << "AES192";
         }
         break;
     case AES_256: {
@@ -31,7 +29,6 @@ QAESEncryption::QAESEncryption(QAESEncryption::AES level, QAESEncryption::MODE m
         m_keyLen = aes.keylen;
         m_nr = aes.nr;
         m_expandedKey = aes.expandedKey;
-        qDebug() << "AES256";
         }
         break;
     default: {
