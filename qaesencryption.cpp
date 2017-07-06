@@ -1,7 +1,7 @@
 #include "qaesencryption.h"
 #include <QDebug>
 
-QAESEncryption::QAESEncryption(QAESEncryption::AES level, QAESEncryption::MODE mode) : m_level(level), m_mode(mode)
+QAESEncryption::QAESEncryption(QAESEncryption::AES level, QAESEncryption::MODE mode) : m_nb(4), m_blocklen(16), m_level(level), m_mode(mode)
 {
     m_state = NULL;
 
@@ -111,7 +111,7 @@ QByteArray QAESEncryption::expandKey(const QByteArray key)
 
 // This function adds the round key to state.
 // The round key is added to the state by an XOR function.
-void QAESEncryption::addRoundKey(quint8 round, const QByteArray expKey)
+void QAESEncryption::addRoundKey(const quint8 round, const QByteArray expKey)
 {
   QByteArray::iterator it = m_state->begin();
   for(int i=0; i < 16; ++i) {

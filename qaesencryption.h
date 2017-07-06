@@ -3,7 +3,6 @@
 
 #include <QObject>
 #include <QByteArray>
-#include <QVariant>
 
 class QAESEncryption : public QObject
 {
@@ -32,7 +31,7 @@ public slots:
 private:
     //typedef uint8_t state[4][4];
 
-    int m_nb = 4, m_blocklen = 16, m_mode, m_level;
+    int m_nb, m_blocklen, m_level, m_mode;
     QByteArray* m_state;
 
     int m_nk, m_keyLen, m_nr, m_expandedKey;
@@ -61,7 +60,7 @@ private:
     quint8 getSBoxValue(quint8 num){return sbox[num];}
     quint8 getSBoxInvert(quint8 num){return rsbox[num];}
     QByteArray expandKey(const QByteArray key);
-    void addRoundKey(quint8 round, const QByteArray expKey);
+    void addRoundKey(const quint8 round, const QByteArray expKey);
     void subBytes();
     void shiftRows();
     void mixColumns();
