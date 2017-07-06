@@ -179,7 +179,7 @@ bool testECB256Decrypt()
     return (outputHex == decodeHex);
 }
 
-bool testCBC128String()
+bool testECB128String()
 {
     QAESEncryption encryption(QAESEncryption::AES_128, QAESEncryption::ECB);
 
@@ -196,7 +196,7 @@ bool testCBC128String()
     return (QString(decodeText) == inputStr);
 }
 
-bool testCBC256String()
+bool testECB256String()
 {
     QAESEncryption encryption(QAESEncryption::AES_256, QAESEncryption::ECB);
 
@@ -228,10 +228,10 @@ int main(int argc, char *argv[])
     Q_ASSERT(testCBC128Crypt());
     Q_ASSERT(testCBC128Decrypt());
 
-    Q_ASSERT(testCBC128String());
-    Q_ASSERT(testCBC256String());
+    Q_ASSERT(testECB128String());
+    Q_ASSERT(testECB256String());
 
-    qDebug() << "Testing done!";
+    qDebug() << "Testing with instance member DONE";
 
     return 0;
 }
