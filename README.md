@@ -1,5 +1,5 @@
 # Qt-AES
-AES Encryption in Qt.
+Small and portable AES encryption class for Qt.
 Supports all key sizes - 128/192/256 and ECB/CBC modes
 
 ## Usage
