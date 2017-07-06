@@ -355,9 +355,9 @@ QByteArray QAESEncryption::decode(const QByteArray rawText, const QByteArray key
     QByteArray alignedText(rawText);
     QByteArray ivTemp(iv);
 
-    alignedText.append(getPadding(rawText.size(), m_blocklen), 0); //filling the array with zeros
+    //alignedText.append(getPadding(rawText.size(), m_blocklen), 0); //filling the array with zeros
 
-    for(int i=0; i < alignedText.size(); i+= m_keyLen)
+    for(int i=0; i < alignedText.size(); i+= m_blocklen)
     {
         ret.append(invCipher(expandedKey, alignedText.mid(i, m_blocklen)));
 
