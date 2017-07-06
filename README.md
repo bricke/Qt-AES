@@ -3,16 +3,61 @@ Small and portable AES encryption class for Qt.
 Supports all key sizes - 128/192/256 and ECB/CBC modes
 
 ## Usage
-Import the header file
-```#include "qaesencryption.h"
 
-...
+### Usage via instance
+Example for 128bit ECB
+```
+#include "qaesencryption.h"
 
-QAESEncryption encryption(QAESEncryption::AES_128, QAESEncryption::ECB);
-QByteArray encodedHex = encryption.encode(hexText, keyHex);
-QByteArray decodedHex = encryption.decode(hexText, keyHex);
+  QAESEncryption encryption(QAESEncryption::AES_128, QAESEncryption::ECB);
+  QByteArray encodedText = encryption.encode(plainText, key);
+
+  QByteArray decodedText = encryption.decode(encodedText, key);
 ```
 
-## Tips
-In AES the key needs to be 128/192/256 bits long, an MD5 Hash can be used to generate a 128 bit long QByteArray from a QString, a SHA256 can be used to generate a 256bit key.
-See the *main.cpp* file for references on usage
+Example for 256bit CBC using QString
+```
+#include <QCryptographicHash>
+#include "qaesencryption.h"
+
+  QAESEncryption encryption(QAESEncryption::AES_256, QAESEncryption::CBC);
+
+  QString inputStr("The Advanced Encryption Standard (AES), also known by its original name Rijndael "
+                   "is a specification for the encryption of electronic data established by the U.S. "
+                  "National Institute of Standards and Technology (NIST) in 2001");
+  QString key("your-string-key");
+  QString iv("your-IV-vector");
+
+  QByteArray hashKey = QCryptographicHash::hash(key.toLocal8Bit(), QCryptographicHash::Sha256);
+  QByteArray hashIV = QCryptographicHash::hash(iv.toLocal8Bit(), QCryptographicHash::Sha256);
+
+  QByteArray encodeText = encryption.encode(inputStr.toLocal8Bit(), hashKey, hashIV);
+  QByteArray decodeText = encryption.decode(encodeText, hashKey, hashIV);
+```
+
+### Usage via static invocation
+Example of static invocation without creating instances
+```
+#include <QCryptographicHash>
+#include "qaesencryption.h"
+
+  QString inputStr("The Advanced Encryption Standard (AES), also known by its original name Rijndael "
+                   "is a specification for the encryption of electronic data established by the U.S. "
+                  "National Institute of Standards and Technology (NIST) in 2001");
+  QString key("your-string-key");
+  QString iv("your-IV-vector");
+
+  QByteArray hashKey = QCryptographicHash::hash(key.toLocal8Bit(), QCryptographicHash::Sha256);
+  QByteArray hashIV = QCryptographicHash::hash(iv.toLocal8Bit(), QCryptographicHash::Sha256);
+
+  //Static invocation
+  QAESEncryption::Crypt(QAESEncryption::AES_256, QAESEncryption::CBC, inputStr.toLocal8Bit(), hashKey, hashIV);
+
+```
+
+## Contact
+Question or suggestions are welcome!
+Please use the GitHub issue tracking to report suggestions or issues.
+
+## Licence
+This software is provided under the [UNLICENSE](http://unlicense.org/)
