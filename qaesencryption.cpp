@@ -1,6 +1,32 @@
 #include "qaesencryption.h"
 #include <QDebug>
 
+
+/*
+ * Static Functions
+ * */
+QByteArray QAESEncryption::Crypt(QAESEncryption::AES level, QAESEncryption::MODE mode, const QByteArray rawText, const QByteArray key, const QByteArray iv)
+{
+    return QAESEncryption(level, mode).encode(rawText, key, iv);
+}
+
+QByteArray QAESEncryption::Decrypt(QAESEncryption::AES level, QAESEncryption::MODE mode, const QByteArray rawText, const QByteArray key, const QByteArray iv)
+{
+     return QAESEncryption(level, mode).decode(rawText, key, iv);
+}
+
+QByteArray QAESEncryption::ExpandKey(QAESEncryption::AES level, QAESEncryption::MODE mode, const QByteArray key)
+{
+     return QAESEncryption(level, mode).expandKey(key);
+}
+/*
+ * End Static function declarations
+ * */
+
+
+/*
+ * Constructor
+ * */
 QAESEncryption::QAESEncryption(QAESEncryption::AES level, QAESEncryption::MODE mode) : m_nb(4), m_blocklen(16), m_level(level), m_mode(mode)
 {
     m_state = NULL;
@@ -354,8 +380,6 @@ QByteArray QAESEncryption::decode(const QByteArray rawText, const QByteArray key
     QByteArray expandedKey = expandKey(key);
     QByteArray alignedText(rawText);
     QByteArray ivTemp(iv);
-
-    //alignedText.append(getPadding(rawText.size(), m_blocklen), 0); //filling the array with zeros
 
     for(int i=0; i < alignedText.size(); i+= m_blocklen)
     {

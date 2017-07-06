@@ -19,10 +19,15 @@ public:
         CBC
     } MODE;
 
+    static QByteArray Crypt(QAESEncryption::AES level, QAESEncryption::MODE mode, const QByteArray rawText, const QByteArray key, const QByteArray iv = NULL);
+    static QByteArray Decrypt(QAESEncryption::AES level, QAESEncryption::MODE mode, const QByteArray rawText, const QByteArray key, const QByteArray iv = NULL);
+    static QByteArray ExpandKey(QAESEncryption::AES level, QAESEncryption::MODE mode, const QByteArray key);
+
     QAESEncryption(QAESEncryption::AES level, QAESEncryption::MODE mode);
 
     QByteArray encode(const QByteArray rawText, const QByteArray key, const QByteArray iv = NULL);
     QByteArray decode(const QByteArray rawText, const QByteArray key, const QByteArray iv = NULL);
+    QByteArray expandKey(const QByteArray key);
 
 signals:
 
@@ -59,7 +64,7 @@ private:
 
     quint8 getSBoxValue(quint8 num){return sbox[num];}
     quint8 getSBoxInvert(quint8 num){return rsbox[num];}
-    QByteArray expandKey(const QByteArray key);
+
     void addRoundKey(const quint8 round, const QByteArray expKey);
     void subBytes();
     void shiftRows();
