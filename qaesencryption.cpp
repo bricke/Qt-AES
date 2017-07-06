@@ -246,6 +246,18 @@ void QAESEncryption::invShiftRows()
     it[11] = (quint8)temp;
 }
 
+QByteArray QAESEncryption::ivXor(const QByteArray in, const QByteArray iv)
+{
+  QByteArray::const_iterator it = in.begin();
+  QByteArray::const_iterator it_iv = iv.begin();
+  QByteArray ret;
+
+  for(int i = 0; i < m_blocklen; i++)
+      ret.insert(i,it[i] ^ it_iv[i]);
+
+  return ret;
+}
+
 // Cipher is the main function that encrypts the PlainText.
 QByteArray QAESEncryption::cipher(const QByteArray expKey, const QByteArray in)
 {
@@ -308,34 +320,52 @@ QByteArray QAESEncryption::invCipher(const QByteArray expKey, const QByteArray i
 
 QByteArray QAESEncryption::encode(const QByteArray rawText, const QByteArray key, const QByteArray iv)
 {
-    if (m_mode == CBC && iv.isNull())
+    if (m_mode == CBC && (iv.isNull() || iv.size() != m_blocklen))
        return QByteArray();
 
     QByteArray ret;
     QByteArray expandedKey = expandKey(key);
     QByteArray alignedText(rawText);
+    QByteArray ivTemp(iv);
 
-    alignedText.append(getPadding(rawText.size(), m_keyLen), 0); //filling the array with zeros
 
-    for(int i=0; i < alignedText.size(); i+= m_keyLen)
-        ret.append(cipher(expandedKey, alignedText.mid(i, m_keyLen)));
+    alignedText.append(getPadding(rawText.size(), m_blocklen), 0); //filling the array with zeros
+
+    for(int i=0; i < alignedText.size(); i+= m_blocklen)
+    {
+        if (m_mode == CBC)
+            alignedText.replace(i, m_blocklen, ivXor(alignedText.mid(i, m_blocklen),ivTemp));
+
+        ret.append(cipher(expandedKey, alignedText.mid(i, m_blocklen)));
+
+        if (m_mode == CBC)
+            ivTemp = ret.mid(i, m_blocklen);
+    }
 
     return ret;
 }
 
 QByteArray QAESEncryption::decode(const QByteArray rawText, const QByteArray key, const QByteArray iv)
 {
-    if (m_mode == CBC && iv.isNull())
+    if (m_mode == CBC && (iv.isNull() || iv.size() != m_blocklen))
        return QByteArray();
 
     QByteArray ret;
     QByteArray expandedKey = expandKey(key);
     QByteArray alignedText(rawText);
+    QByteArray ivTemp(iv);
 
-    alignedText.append(getPadding(rawText.size(), m_keyLen), 0); //filling the array with zeros
+    alignedText.append(getPadding(rawText.size(), m_blocklen), 0); //filling the array with zeros
 
     for(int i=0; i < alignedText.size(); i+= m_keyLen)
-        ret.append(invCipher(expandedKey, alignedText.mid(i, m_keyLen)));
+    {
+        ret.append(invCipher(expandedKey, alignedText.mid(i, m_blocklen)));
+
+        if (m_mode == CBC) {
+            ret.replace(i, m_blocklen, ivXor(ret.mid(i, m_blocklen),ivTemp));
+            ivTemp = alignedText.mid(i, m_blocklen);
+        }
+    }
 
     return ret;
 }

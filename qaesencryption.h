@@ -70,6 +70,7 @@ private:
     void invShiftRows();
     QByteArray cipher(const QByteArray expKey, const QByteArray plainText);
     QByteArray invCipher(const QByteArray expKey, const QByteArray plainText);
+    QByteArray ivXor(const QByteArray in, const QByteArray iv);
 
     const quint8 sbox[256] =   {
       //0     1    2      3     4    5     6     7      8    9     A      B    C     D     E     F
