@@ -56,7 +56,7 @@ Example of static invocation without creating instances
 ```
 
 ## Unit Testing
-The unit testing vectors are available at [NIST-Recommendation for Block Cipher Modes of Operation](http://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38a.pdf)
+The unit testing vectors used are included in [NIST-Recommendation for Block Cipher Modes of Operation](http://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38a.pdf)
 
 ## Contact
 Question or suggestions are welcome!
