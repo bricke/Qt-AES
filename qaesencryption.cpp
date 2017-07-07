@@ -1,6 +1,4 @@
 #include "qaesencryption.h"
-#include <QDebug>
-
 
 /*
  * Static Functions
@@ -23,11 +21,29 @@ QByteArray QAESEncryption::ExpandKey(QAESEncryption::AES level, QAESEncryption::
  * End Static function declarations
  * */
 
-
 /*
- * Constructor
+ * Inline Functions
  * */
-QAESEncryption::QAESEncryption(QAESEncryption::AES level, QAESEncryption::MODE mode) : m_nb(4), m_blocklen(16), m_level(level), m_mode(mode)
+
+inline quint8 xTime(quint8 x){
+  return ((x<<1) ^ (((x>>7) & 1) * 0x1b));
+}
+
+inline quint8 multiply(quint8 x, quint8 y){
+  return (((y & 1) * x) ^ ((y>>1 & 1) * xTime(x)) ^ ((y>>2 & 1) * xTime(xTime(x))) ^ ((y>>3 & 1)
+            * xTime(xTime(xTime(x)))) ^ ((y>>4 & 1) * xTime(xTime(xTime(xTime(x))))));
+}
+
+inline int getPadding(int currSize, int alignment) {
+    return (alignment - currSize % alignment) % alignment;
+}
+/*
+ * End Inline functions
+ * */
+
+
+QAESEncryption::QAESEncryption(QAESEncryption::AES level, QAESEncryption::MODE mode)
+    : m_nb(4), m_blocklen(16), m_level(level), m_mode(mode)
 {
     m_state = NULL;
 
@@ -63,7 +79,6 @@ QAESEncryption::QAESEncryption(QAESEncryption::AES level, QAESEncryption::MODE m
         m_keyLen = aes.keylen;
         m_nr = aes.nr;
         m_expandedKey = aes.expandedKey;
-        qDebug() << "Defaulting to AES128";
         }
         break;
     }
@@ -83,49 +98,38 @@ QByteArray QAESEncryption::expandKey(const QByteArray key)
   //i == Nk
   for(i = m_nk; i < m_nb * (m_nr + 1); i++)
   {
-    {
-      tempa[0] = (quint8) roundKey.at((i-1) * 4 + 0);
-      tempa[1] = (quint8) roundKey.at((i-1) * 4 + 1);
-      tempa[2] = (quint8) roundKey.at((i-1) * 4 + 2);
-      tempa[3] = (quint8) roundKey.at((i-1) * 4 + 3);
-    }
+    tempa[0] = (quint8) roundKey.at((i-1) * 4 + 0);
+    tempa[1] = (quint8) roundKey.at((i-1) * 4 + 1);
+    tempa[2] = (quint8) roundKey.at((i-1) * 4 + 2);
+    tempa[3] = (quint8) roundKey.at((i-1) * 4 + 3);
 
     if (i % m_nk == 0)
     {
-      // This function shifts the 4 bytes in a word to the left once.
-      // [a0,a1,a2,a3] becomes [a1,a2,a3,a0]
+        // This function shifts the 4 bytes in a word to the left once.
+        // [a0,a1,a2,a3] becomes [a1,a2,a3,a0]
 
-      // Function RotWord()
-      {
+        // Function RotWord()
         k = tempa[0];
         tempa[0] = tempa[1];
         tempa[1] = tempa[2];
         tempa[2] = tempa[3];
         tempa[3] = k;
-      }
 
-      // SubWord() is a function that takes a four-byte input word and
-      // applies the S-box to each of the four bytes to produce an output word.
-
-      // Function Subword()
-      {
+        // Function Subword()
         tempa[0] = getSBoxValue(tempa[0]);
         tempa[1] = getSBoxValue(tempa[1]);
         tempa[2] = getSBoxValue(tempa[2]);
         tempa[3] = getSBoxValue(tempa[3]);
-      }
 
-      tempa[0] =  tempa[0] ^ Rcon[i/m_nk];
+        tempa[0] =  tempa[0] ^ Rcon[i/m_nk];
     }
     if (m_level == AES_256 && i % m_nk == 4)
     {
-      // Function Subword()
-      {
+        // Function Subword()
         tempa[0] = getSBoxValue(tempa[0]);
         tempa[1] = getSBoxValue(tempa[1]);
         tempa[2] = getSBoxValue(tempa[2]);
         tempa[3] = getSBoxValue(tempa[3]);
-      }
     }
     roundKey.insert(i * 4 + 0, (quint8) roundKey.at((i - m_nk) * 4 + 0) ^ tempa[0]);
     roundKey.insert(i * 4 + 1, (quint8) roundKey.at((i - m_nk) * 4 + 1) ^ tempa[1]);
@@ -140,9 +144,8 @@ QByteArray QAESEncryption::expandKey(const QByteArray key)
 void QAESEncryption::addRoundKey(const quint8 round, const QByteArray expKey)
 {
   QByteArray::iterator it = m_state->begin();
-  for(int i=0; i < 16; ++i) {
+  for(int i=0; i < 16; ++i)
       it[i] = (quint8) it[i] ^ (quint8) expKey.at(round * m_nb * 4 + (i/4) * m_nb + (i%4));
-  }
 }
 
 // The SubBytes Function Substitutes the values in the
@@ -164,26 +167,26 @@ void QAESEncryption::shiftRows()
     //Keep in mind that QByteArray is column-driven!!
 
      //Shift 1 to left
-    temp    = (quint8)it[1];
-    it[1]   = (quint8)it[5];
-    it[5] = (quint8)it[9];
-    it[9] = (quint8)it[13];
+    temp   = (quint8)it[1];
+    it[1]  = (quint8)it[5];
+    it[5]  = (quint8)it[9];
+    it[9]  = (quint8)it[13];
     it[13] = (quint8)temp;
 
     //Shift 2 to left
-    temp    = (quint8)it[2];
-    it[2]   = (quint8)it[10];
+    temp   = (quint8)it[2];
+    it[2]  = (quint8)it[10];
     it[10] = (quint8)temp;
-    temp    = (quint8)it[6];
-    it[6] = (quint8)it[14];
+    temp   = (quint8)it[6];
+    it[6]  = (quint8)it[14];
     it[14] = (quint8)temp;
 
     //Shift 3 to left
-    temp     = (quint8)it[3];
-    it[3]   = (quint8)it[15];
+    temp   = (quint8)it[3];
+    it[3]  = (quint8)it[15];
     it[15] = (quint8)it[11];
     it[11] = (quint8)it[7];
-    it[7] = (quint8)temp;
+    it[7]  = (quint8)temp;
 }
 
 // MixColumns function mixes the columns of the state matrix
@@ -193,21 +196,20 @@ void QAESEncryption::mixColumns()
   QByteArray::iterator it = m_state->begin();
   quint8 tmp, tm, t;
 
-  for(int i = 0; i < 16; i += 4)
-  {
-    t   = (quint8)it[i];
-    tmp =  (quint8)it[i] ^ (quint8)it[i+1] ^ (quint8)it[i+2] ^ (quint8)it[i+3] ;
+  for(int i = 0; i < 16; i += 4){
+    t       = (quint8)it[i];
+    tmp     =  (quint8)it[i] ^ (quint8)it[i+1] ^ (quint8)it[i+2] ^ (quint8)it[i+3] ;
 
-    tm = xTime( (quint8)it[i] ^ (quint8)it[i+1] );
-    it[i] = (quint8)it[i] ^ (quint8)tm ^ (quint8)tmp;
+    tm      = xTime( (quint8)it[i] ^ (quint8)it[i+1] );
+    it[i]   = (quint8)it[i] ^ (quint8)tm ^ (quint8)tmp;
 
-    tm = xTime( (quint8)it[i+1] ^ (quint8)it[i+2]);
+    tm      = xTime( (quint8)it[i+1] ^ (quint8)it[i+2]);
     it[i+1] = (quint8)it[i+1] ^ (quint8)tm ^ (quint8)tmp;
 
-    tm = xTime( (quint8)it[i+2] ^ (quint8)it[i+3]);
+    tm      = xTime( (quint8)it[i+2] ^ (quint8)it[i+3]);
     it[i+2] =(quint8)it[i+2] ^ (quint8)tm ^ (quint8)tmp;
 
-    tm = xTime((quint8)it[i+3] ^ (quint8)t);
+    tm      = xTime((quint8)it[i+3] ^ (quint8)t);
     it[i+3] =(quint8)it[i+3] ^ (quint8)tm ^ (quint8)tmp;
   }
 }
@@ -219,8 +221,7 @@ void QAESEncryption::invMixColumns()
 {
   QByteArray::iterator it = m_state->begin();
   quint8 a,b,c,d;
-  for(int i = 0; i < 16; i+=4)
-  {
+  for(int i = 0; i < 16; i+=4){
     a = (quint8) it[i];
     b = (quint8) it[i+1];
     c = (quint8) it[i+2];
@@ -250,25 +251,25 @@ void QAESEncryption::invShiftRows()
     //Keep in mind that QByteArray is column-driven!!
 
     //Shift 1 to right
-    temp    = (quint8)it[13];
+    temp   = (quint8)it[13];
     it[13] = (quint8)it[9];
-    it[9] = (quint8)it[5];
-    it[5] = (quint8)it[1];
-    it[1]   = (quint8)temp;
+    it[9]  = (quint8)it[5];
+    it[5]  = (quint8)it[1];
+    it[1]  = (quint8)temp;
 
     //Shift 2
-    temp    = (quint8)it[10];
+    temp   = (quint8)it[10];
     it[10] = (quint8)it[2];
-    it[2]   = (quint8)temp;
-    temp    = (quint8)it[14];
+    it[2]  = (quint8)temp;
+    temp   = (quint8)it[14];
     it[14] = (quint8)it[6];
-    it[6] = (quint8)temp;
+    it[6]  = (quint8)temp;
 
     //Shift 3
-    temp     = (quint8)it[15];
+    temp   = (quint8)it[15];
     it[15] = (quint8)it[3];
-    it[3]   = (quint8)it[7];
-    it[7] = (quint8)it[11];
+    it[3]  = (quint8)it[7];
+    it[7]  = (quint8)it[11];
     it[11] = (quint8)temp;
 }
 
@@ -298,8 +299,7 @@ QByteArray QAESEncryption::cipher(const QByteArray expKey, const QByteArray in)
   // There will be Nr rounds.
   // The first Nr-1 rounds are identical.
   // These Nr-1 rounds are executed in the loop below.
-  for(quint8 round = 1; round < m_nr; ++round)
-  {
+  for(quint8 round = 1; round < m_nr; ++round){
     subBytes();
     shiftRows();
     mixColumns();
@@ -327,8 +327,7 @@ QByteArray QAESEncryption::invCipher(const QByteArray expKey, const QByteArray i
     // There will be Nr rounds.
     // The first Nr-1 rounds are identical.
     // These Nr-1 rounds are executed in the loop below.
-    for(quint8 round=m_nr-1; round>0 ; round--)
-    {
+    for(quint8 round=m_nr-1; round>0 ; round--){
         invShiftRows();
         invSubBytes();
         addRoundKey(round, expKey);
@@ -357,8 +356,7 @@ QByteArray QAESEncryption::encode(const QByteArray rawText, const QByteArray key
 
     alignedText.append(getPadding(rawText.size(), m_blocklen), 0); //filling the array with zeros
 
-    for(int i=0; i < alignedText.size(); i+= m_blocklen)
-    {
+    for(int i=0; i < alignedText.size(); i+= m_blocklen){
         if (m_mode == CBC)
             alignedText.replace(i, m_blocklen, ivXor(alignedText.mid(i, m_blocklen),ivTemp));
 
@@ -367,7 +365,6 @@ QByteArray QAESEncryption::encode(const QByteArray rawText, const QByteArray key
         if (m_mode == CBC)
             ivTemp = ret.mid(i, m_blocklen);
     }
-
     return ret;
 }
 
@@ -381,8 +378,7 @@ QByteArray QAESEncryption::decode(const QByteArray rawText, const QByteArray key
     QByteArray alignedText(rawText);
     QByteArray ivTemp(iv);
 
-    for(int i=0; i < alignedText.size(); i+= m_blocklen)
-    {
+    for(int i=0; i < alignedText.size(); i+= m_blocklen){
         ret.append(invCipher(expandedKey, alignedText.mid(i, m_blocklen)));
 
         if (m_mode == CBC) {
@@ -390,6 +386,5 @@ QByteArray QAESEncryption::decode(const QByteArray rawText, const QByteArray key
             ivTemp = alignedText.mid(i, m_blocklen);
         }
     }
-
     return ret;
 }

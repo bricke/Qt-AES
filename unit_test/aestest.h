@@ -28,10 +28,16 @@ private slots:
     void cleanupTestCase(){}
 
 private:
-    QByteArray key16, key24, key32;
+    QByteArray key16;
+    QByteArray key24;
+    QByteArray key32;
     QByteArray iv;
-    QByteArray in, outECB128, outECB192, outECB256;
-    QByteArray inCBC128, outCBC128;
+    QByteArray in;
+    QByteArray outECB128;
+    QByteArray outECB192;
+    QByteArray outECB256;
+    QByteArray inCBC128;
+    QByteArray outCBC128;
 };
 
 #endif // AESTEST_H
