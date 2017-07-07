@@ -85,5 +85,5 @@ The unit testing vectors used are included in [NIST-Recommendation for Block Cip
 Question or suggestions are welcome!
 Please use the GitHub issue tracking to report suggestions or issues.
 
-## Licence
+## License
 This software is provided under the [UNLICENSE](http://unlicense.org/)
