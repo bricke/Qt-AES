@@ -4,8 +4,31 @@ Supports all key sizes - 128/192/256 bits - ECB and CBC modes
 
 ## Usage
 
-### Usage via instance
-Example for 128bit ECB
+### Available Methods
+```
+//Encode of rawText with key
+//iv is used in CBC mode
+//return the encrypted byte array
+QByteArray encode(const QByteArray rawText, const QByteArray key, const QByteArray iv = NULL);
+
+//Decode of rawText with key
+//iv is used in CBC mode
+//return the decrypted byte array
+QByteArray decode(const QByteArray rawText, const QByteArray key, const QByteArray iv = NULL);
+
+//Key expansion in Rijndael schedule
+//return the new expanded key as byte array
+QByteArray expandKey(const QByteArray key);
+```
+The same methods are available as static calls
+```
+QAESEncryption::Crypt => encode(...)
+QAESEncryption::Decrypt => decode(...)
+QAESEncryption::ExpandKey => expandKey(...)
+```
+
+### Example
+Sample code using a 128bit key in ECB mode
 ```
 #include "qaesencryption.h"
 
@@ -35,8 +58,8 @@ Example for 256bit CBC using QString
   QByteArray decodeText = encryption.decode(encodeText, hashKey, hashIV);
 ```
 
-### Usage via static invocation
-Example of static invocation without creating instances
+### Example via static invocation
+Static invocation without creating instances, 256 bit key, ECB mode, starting from *QString* text/key
 ```
 #include <QCryptographicHash>
 #include "qaesencryption.h"
