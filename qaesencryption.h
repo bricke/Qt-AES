@@ -38,12 +38,11 @@ private:
     int m_blocklen;
     int m_level;
     int m_mode;
-    QByteArray* m_state;
-
     int m_nk;
     int m_keyLen;
     int m_nr;
     int m_expandedKey;
+    QByteArray* m_state;
 
     typedef struct{
         int nk = 8;
