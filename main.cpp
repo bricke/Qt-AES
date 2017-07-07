@@ -1,6 +1,6 @@
 #include <QCoreApplication>
 #include <QTest>
-#include "aestest.h"
+#include "unit_test/aestest.h"
 
 int main(int argc, char *argv[])
 {
