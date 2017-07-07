@@ -1,6 +1,6 @@
 # Qt-AES
 Small and portable AES encryption class for Qt.
-Supports all key sizes - 128/192/256 and ECB/CBC modes
+Supports all key sizes - 128/192/256 bits - ECB and CBC modes
 
 ## Usage
 
@@ -54,6 +54,9 @@ Example of static invocation without creating instances
   QAESEncryption::Crypt(QAESEncryption::AES_256, QAESEncryption::CBC, inputStr.toLocal8Bit(), hashKey, hashIV);
 
 ```
+
+## Unit Testing
+The unit testing vectors are available at [NIST-Recommendation for Block Cipher Modes of Operation](http://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38a.pdf)
 
 ## Contact
 Question or suggestions are welcome!
