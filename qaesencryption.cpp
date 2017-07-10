@@ -356,10 +356,8 @@ QByteArray QAESEncryption::encode(const QByteArray rawText, const QByteArray key
     alignedText.append(getPadding(rawText.size(), m_blocklen), 0); //filling the array with zeros
 
     //Preparation for CFB
-    if (m_mode == CFB){
-        ivTemp = cipher(expandedKey, ivTemp);
-        ret.append(byteXor(alignedText.mid(0, m_blocklen), ivTemp));
-    }
+    if (m_mode == CFB)
+        ret.append(byteXor(alignedText.mid(0, m_blocklen), cipher(expandedKey, iv)));
 
     //Looping thru all blocks
     for(int i=0; i < alignedText.size(); i+= m_blocklen){
@@ -374,8 +372,9 @@ QByteArray QAESEncryption::encode(const QByteArray rawText, const QByteArray key
             ivTemp = ret.mid(i, m_blocklen);
             break;
         case CFB:
-            ivTemp = ret.mid(i, m_blocklen);
-            ret.append(byteXor(alignedText.mid(i, m_blocklen), cipher(expandedKey, ivTemp)));
+            if (i+m_blocklen < alignedText.size())
+                ret.append(byteXor(alignedText.mid(i+m_blocklen, m_blocklen),
+                                   cipher(expandedKey, ret.mid(i, m_blocklen))));
             break;
         default:
             //do nothing
@@ -392,29 +391,28 @@ QByteArray QAESEncryption::decode(const QByteArray rawText, const QByteArray key
 
     QByteArray ret;
     QByteArray expandedKey = expandKey(key);
-    QByteArray alignedText(rawText);
     QByteArray ivTemp(iv);
 
     //Preparation for CFB
-    if (m_mode == CFB){
-        ivTemp = cipher(expandedKey, ivTemp);
-        ret.append(byteXor(alignedText.mid(0, m_blocklen), ivTemp));
-    }
+    if (m_mode == CFB)
+        ret.append(byteXor(rawText.mid(0, m_blocklen), cipher(expandedKey, iv)));
 
-    for(int i=0; i < alignedText.size(); i+= m_blocklen){
+    for(int i=0; i < rawText.size(); i+= m_blocklen){
         switch(m_mode)
         {
         case ECB:
-            ret.append(invCipher(expandedKey, alignedText.mid(i, m_blocklen)));
+            ret.append(invCipher(expandedKey, rawText.mid(i, m_blocklen)));
             break;
         case CBC:
-            ret.append(invCipher(expandedKey, alignedText.mid(i, m_blocklen)));
+            ret.append(invCipher(expandedKey, rawText.mid(i, m_blocklen)));
             ret.replace(i, m_blocklen, byteXor(ret.mid(i, m_blocklen),ivTemp));
-            ivTemp = alignedText.mid(i, m_blocklen);
+            ivTemp = rawText.mid(i, m_blocklen);
             break;
         case CFB:
-            ivTemp = alignedText.mid(i, m_blocklen);
-            ret.append(byteXor(alignedText.mid(i, m_blocklen), cipher(expandedKey, ivTemp)));
+            if (i+m_blocklen < rawText.size()){
+                ret.append(byteXor(rawText.mid(i+m_blocklen, m_blocklen),
+                                   cipher(expandedKey, rawText.mid(i, m_blocklen))));
+            }
             break;
         default:
             //do nothing
