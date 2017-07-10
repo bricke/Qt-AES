@@ -273,14 +273,14 @@ void QAESEncryption::invShiftRows()
     it[11] = (quint8)temp;
 }
 
-QByteArray QAESEncryption::ivXor(const QByteArray in, const QByteArray iv)
+QByteArray QAESEncryption::byteXor(const QByteArray a, const QByteArray b)
 {
-  QByteArray::const_iterator it = in.begin();
-  QByteArray::const_iterator it_iv = iv.begin();
+  QByteArray::const_iterator it_a = a.begin();
+  QByteArray::const_iterator it_b = b.begin();
   QByteArray ret;
 
   for(int i = 0; i < m_blocklen; i++)
-      ret.insert(i,it[i] ^ it_iv[i]);
+      ret.insert(i,it_a[i] ^ it_b[i]);
 
   return ret;
 }
@@ -345,7 +345,7 @@ QByteArray QAESEncryption::invCipher(const QByteArray expKey, const QByteArray i
 
 QByteArray QAESEncryption::encode(const QByteArray rawText, const QByteArray key, const QByteArray iv)
 {
-    if (m_mode == CBC && (iv.isNull() || iv.size() != m_blocklen))
+    if (m_mode >= CBC && (iv.isNull() || iv.size() != m_blocklen))
        return QByteArray();
 
     QByteArray ret;
@@ -353,24 +353,41 @@ QByteArray QAESEncryption::encode(const QByteArray rawText, const QByteArray key
     QByteArray alignedText(rawText);
     QByteArray ivTemp(iv);
 
-
     alignedText.append(getPadding(rawText.size(), m_blocklen), 0); //filling the array with zeros
 
+    //Preparation for CFB
+    if (m_mode == CFB){
+        ivTemp = cipher(expandedKey, ivTemp);
+        ret.append(byteXor(alignedText.mid(0, m_blocklen), ivTemp));
+    }
+
+    //Looping thru all blocks
     for(int i=0; i < alignedText.size(); i+= m_blocklen){
-        if (m_mode == CBC)
-            alignedText.replace(i, m_blocklen, ivXor(alignedText.mid(i, m_blocklen),ivTemp));
-
-        ret.append(cipher(expandedKey, alignedText.mid(i, m_blocklen)));
-
-        if (m_mode == CBC)
+        switch(m_mode)
+        {
+        case ECB:
+            ret.append(cipher(expandedKey, alignedText.mid(i, m_blocklen)));
+            break;
+        case CBC:
+            alignedText.replace(i, m_blocklen, byteXor(alignedText.mid(i, m_blocklen),ivTemp));
+            ret.append(cipher(expandedKey, alignedText.mid(i, m_blocklen)));
             ivTemp = ret.mid(i, m_blocklen);
+            break;
+        case CFB:
+            ivTemp = ret.mid(i, m_blocklen);
+            ret.append(byteXor(alignedText.mid(i, m_blocklen), cipher(expandedKey, ivTemp)));
+            break;
+        default:
+            //do nothing
+            break;
+        }
     }
     return ret;
 }
 
 QByteArray QAESEncryption::decode(const QByteArray rawText, const QByteArray key, const QByteArray iv)
 {
-    if (m_mode == CBC && (iv.isNull() || iv.size() != m_blocklen))
+    if (m_mode >= CBC && (iv.isNull() || iv.size() != m_blocklen))
        return QByteArray();
 
     QByteArray ret;
@@ -378,12 +395,30 @@ QByteArray QAESEncryption::decode(const QByteArray rawText, const QByteArray key
     QByteArray alignedText(rawText);
     QByteArray ivTemp(iv);
 
-    for(int i=0; i < alignedText.size(); i+= m_blocklen){
-        ret.append(invCipher(expandedKey, alignedText.mid(i, m_blocklen)));
+    //Preparation for CFB
+    if (m_mode == CFB){
+        ivTemp = cipher(expandedKey, ivTemp);
+        ret.append(byteXor(alignedText.mid(0, m_blocklen), ivTemp));
+    }
 
-        if (m_mode == CBC) {
-            ret.replace(i, m_blocklen, ivXor(ret.mid(i, m_blocklen),ivTemp));
+    for(int i=0; i < alignedText.size(); i+= m_blocklen){
+        switch(m_mode)
+        {
+        case ECB:
+            ret.append(invCipher(expandedKey, alignedText.mid(i, m_blocklen)));
+            break;
+        case CBC:
+            ret.append(invCipher(expandedKey, alignedText.mid(i, m_blocklen)));
+            ret.replace(i, m_blocklen, byteXor(ret.mid(i, m_blocklen),ivTemp));
             ivTemp = alignedText.mid(i, m_blocklen);
+            break;
+        case CFB:
+            ivTemp = alignedText.mid(i, m_blocklen);
+            ret.append(byteXor(alignedText.mid(i, m_blocklen), cipher(expandedKey, ivTemp)));
+            break;
+        default:
+            //do nothing
+            break;
         }
     }
     return ret;
