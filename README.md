@@ -81,6 +81,10 @@ Static invocation without creating instances, 256 bit key, ECB mode, starting fr
 ## Unit Testing
 The unit testing vectors used are included in [NIST-Recommendation for Block Cipher Modes of Operation](http://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38a.pdf)
 
+## Dependencies
+* qtcore
+No OpenSSL required.
+
 ## Contact
 Question or suggestions are welcome!
 Please use the GitHub issue tracking to report suggestions or issues.
