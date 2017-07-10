@@ -1,6 +1,6 @@
 # Qt-AES
 Small and portable AES encryption class for Qt.
-Supports all key sizes - 128/192/256 bits - ECB and CBC modes
+Supports all key sizes - 128/192/256 bits - ECB, CBC and CFB modes
 
 ## Usage
 
@@ -81,9 +81,14 @@ Static invocation without creating instances, 256 bit key, ECB mode, starting fr
 ## Unit Testing
 The unit testing vectors used are included in [NIST-Recommendation for Block Cipher Modes of Operation](http://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38a.pdf)
 
+## Dependencies
+* qtcore
+
+No OpenSSL required.
+
 ## Contact
 Question or suggestions are welcome!
 Please use the GitHub issue tracking to report suggestions or issues.
 
-## Licence
+## License
 This software is provided under the [UNLICENSE](http://unlicense.org/)
