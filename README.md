@@ -83,6 +83,7 @@ The unit testing vectors used are included in [NIST-Recommendation for Block Cip
 
 ## Dependencies
 * qtcore
+
 No OpenSSL required.
 
 ## Contact
