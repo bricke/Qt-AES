@@ -353,7 +353,9 @@ QByteArray QAESEncryption::encode(const QByteArray rawText, const QByteArray key
     QByteArray alignedText(rawText);
     QByteArray ivTemp(iv);
 
-    alignedText.append(getPadding(rawText.size(), m_blocklen), 0); //filling the array with zeros
+    //Fill array with zeros
+    QByteArray padding(getPadding(rawText.size(), m_blocklen), 0);
+    alignedText.append(padding);
 
     //Preparation for CFB
     if (m_mode == CFB)
