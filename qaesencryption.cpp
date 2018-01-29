@@ -3,17 +3,17 @@
 /*
  * Static Functions
  * */
-QByteArray QAESEncryption::Crypt(QAESEncryption::AES level, QAESEncryption::MODE mode, const QByteArray rawText, const QByteArray key, const QByteArray iv)
+QByteArray QAESEncryption::Crypt(QAESEncryption::AES level, QAESEncryption::MODE mode, const QByteArray &rawText, const QByteArray &key, const QByteArray &iv)
 {
     return QAESEncryption(level, mode).encode(rawText, key, iv);
 }
 
-QByteArray QAESEncryption::Decrypt(QAESEncryption::AES level, QAESEncryption::MODE mode, const QByteArray rawText, const QByteArray key, const QByteArray iv)
+QByteArray QAESEncryption::Decrypt(QAESEncryption::AES level, QAESEncryption::MODE mode, const QByteArray &rawText, const QByteArray &key, const QByteArray &iv)
 {
      return QAESEncryption(level, mode).decode(rawText, key, iv);
 }
 
-QByteArray QAESEncryption::ExpandKey(QAESEncryption::AES level, QAESEncryption::MODE mode, const QByteArray key)
+QByteArray QAESEncryption::ExpandKey(QAESEncryption::AES level, QAESEncryption::MODE mode, const QByteArray &key)
 {
      return QAESEncryption(level, mode).expandKey(key);
 }
@@ -85,7 +85,7 @@ QAESEncryption::QAESEncryption(QAESEncryption::AES level, QAESEncryption::MODE m
 
 }
 
-QByteArray QAESEncryption::expandKey(const QByteArray key)
+QByteArray QAESEncryption::expandKey(const QByteArray &key)
 {
   int i, k;
   quint8 tempa[4]; // Used for the column/row operations
@@ -273,7 +273,7 @@ void QAESEncryption::invShiftRows()
     it[11] = (quint8)temp;
 }
 
-QByteArray QAESEncryption::byteXor(const QByteArray a, const QByteArray b)
+QByteArray QAESEncryption::byteXor(const QByteArray &a, const QByteArray &b)
 {
   QByteArray::const_iterator it_a = a.begin();
   QByteArray::const_iterator it_b = b.begin();
@@ -286,7 +286,7 @@ QByteArray QAESEncryption::byteXor(const QByteArray a, const QByteArray b)
 }
 
 // Cipher is the main function that encrypts the PlainText.
-QByteArray QAESEncryption::cipher(const QByteArray expKey, const QByteArray in)
+QByteArray QAESEncryption::cipher(const QByteArray &expKey, const QByteArray &in)
 {
 
   //m_state is the input buffer...
@@ -315,7 +315,7 @@ QByteArray QAESEncryption::cipher(const QByteArray expKey, const QByteArray in)
   return output;
 }
 
-QByteArray QAESEncryption::invCipher(const QByteArray expKey, const QByteArray in)
+QByteArray QAESEncryption::invCipher(const QByteArray &expKey, const QByteArray &in)
 {
     //m_state is the input buffer.... handle it!
     QByteArray output(in);
@@ -343,7 +343,7 @@ QByteArray QAESEncryption::invCipher(const QByteArray expKey, const QByteArray i
     return output;
 }
 
-QByteArray QAESEncryption::encode(const QByteArray rawText, const QByteArray key, const QByteArray iv)
+QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv)
 {
     if (m_mode >= CBC && (iv.isNull() || iv.size() != m_blocklen))
        return QByteArray();
@@ -386,7 +386,7 @@ QByteArray QAESEncryption::encode(const QByteArray rawText, const QByteArray key
     return ret;
 }
 
-QByteArray QAESEncryption::decode(const QByteArray rawText, const QByteArray key, const QByteArray iv)
+QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv)
 {
     if (m_mode >= CBC && (iv.isNull() || iv.size() != m_blocklen))
        return QByteArray();

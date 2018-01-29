@@ -20,15 +20,15 @@ public:
         CFB
     } MODE;
 
-    static QByteArray Crypt(QAESEncryption::AES level, QAESEncryption::MODE mode, const QByteArray rawText, const QByteArray key, const QByteArray iv = NULL);
-    static QByteArray Decrypt(QAESEncryption::AES level, QAESEncryption::MODE mode, const QByteArray rawText, const QByteArray key, const QByteArray iv = NULL);
-    static QByteArray ExpandKey(QAESEncryption::AES level, QAESEncryption::MODE mode, const QByteArray key);
+    static QByteArray Crypt(QAESEncryption::AES level, QAESEncryption::MODE mode, const QByteArray &rawText, const QByteArray &key, const QByteArray &iv = NULL);
+    static QByteArray Decrypt(QAESEncryption::AES level, QAESEncryption::MODE mode, const QByteArray &rawText, const QByteArray &key, const QByteArray &iv = NULL);
+    static QByteArray ExpandKey(QAESEncryption::AES level, QAESEncryption::MODE mode, const QByteArray &key);
 
     QAESEncryption(QAESEncryption::AES level, QAESEncryption::MODE mode);
 
-    QByteArray encode(const QByteArray rawText, const QByteArray key, const QByteArray iv = NULL);
-    QByteArray decode(const QByteArray rawText, const QByteArray key, const QByteArray iv = NULL);
-    QByteArray expandKey(const QByteArray key);
+    QByteArray encode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv = NULL);
+    QByteArray decode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv = NULL);
+    QByteArray expandKey(const QByteArray &key);
 
 signals:
 
@@ -76,9 +76,9 @@ private:
     void invMixColumns();
     void invSubBytes();
     void invShiftRows();
-    QByteArray cipher(const QByteArray expKey, const QByteArray plainText);
-    QByteArray invCipher(const QByteArray expKey, const QByteArray plainText);
-    QByteArray byteXor(const QByteArray in, const QByteArray iv);
+    QByteArray cipher(const QByteArray &expKey, const QByteArray &plainText);
+    QByteArray invCipher(const QByteArray &expKey, const QByteArray &plainText);
+    QByteArray byteXor(const QByteArray &in, const QByteArray &iv);
 
     const quint8 sbox[256] =   {
       //0     1    2      3     4    5     6     7      8    9     A      B    C     D     E     F
