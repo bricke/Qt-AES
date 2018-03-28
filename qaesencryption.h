@@ -8,23 +8,29 @@ class QAESEncryption : public QObject
 {
     Q_OBJECT
 public:
-    typedef enum {
+    enum AES {
         AES_128,
         AES_192,
         AES_256
-    } AES;
+    };
 
-    typedef enum {
+    enum MODE {
         ECB,
         CBC,
         CFB
-    } MODE;
+    };
+
+    enum PADDING {
+      ZERO,
+      PKCS7,
+      ISO
+    };
 
     static QByteArray Crypt(QAESEncryption::AES level, QAESEncryption::MODE mode, const QByteArray &rawText, const QByteArray &key, const QByteArray &iv = NULL);
     static QByteArray Decrypt(QAESEncryption::AES level, QAESEncryption::MODE mode, const QByteArray &rawText, const QByteArray &key, const QByteArray &iv = NULL);
     static QByteArray ExpandKey(QAESEncryption::AES level, QAESEncryption::MODE mode, const QByteArray &key);
 
-    QAESEncryption(QAESEncryption::AES level, QAESEncryption::MODE mode);
+    QAESEncryption(QAESEncryption::AES level, QAESEncryption::MODE mode, QAESEncryption::PADDING padding = QAESEncryption::ZERO);
 
     QByteArray encode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv = NULL);
     QByteArray decode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv = NULL);
@@ -43,28 +49,29 @@ private:
     int m_keyLen;
     int m_nr;
     int m_expandedKey;
+    int m_padding;
     QByteArray* m_state;
 
-    typedef struct{
+    struct AES256{
         int nk = 8;
         int keylen = 32;
         int nr = 14;
         int expandedKey = 240;
-    } AES256;
+    };
 
-    typedef struct{
+    struct AES192{
         int nk = 6;
         int keylen = 24;
         int nr = 12;
         int expandedKey = 209;
-    } AES192;
+    };
 
-    typedef struct{
+    struct AES128{
         int nk = 4;
         int keylen = 16;
         int nr = 10;
         int expandedKey = 176;
-    } AES128;
+    };
 
     quint8 getSBoxValue(quint8 num){return sbox[num];}
     quint8 getSBoxInvert(quint8 num){return rsbox[num];}
@@ -76,6 +83,7 @@ private:
     void invMixColumns();
     void invSubBytes();
     void invShiftRows();
+    QByteArray getPadding(int currSize, int alignment);
     QByteArray cipher(const QByteArray &expKey, const QByteArray &plainText);
     QByteArray invCipher(const QByteArray &expKey, const QByteArray &plainText);
     QByteArray byteXor(const QByteArray &in, const QByteArray &iv);
@@ -136,7 +144,7 @@ private:
         0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d, 0x01, 0x02, 0x04,
         0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63,
         0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd,
-        0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d */};
+            0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d */};
 };
 
 #endif // QAESENCRYPTION_H

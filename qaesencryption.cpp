@@ -34,16 +34,13 @@ inline quint8 multiply(quint8 x, quint8 y){
             * xTime(xTime(xTime(x)))) ^ ((y>>4 & 1) * xTime(xTime(xTime(xTime(x))))));
 }
 
-inline int getPadding(int currSize, int alignment) {
-    return (alignment - currSize % alignment) % alignment;
-}
 /*
  * End Inline functions
  * */
 
 
-QAESEncryption::QAESEncryption(QAESEncryption::AES level, QAESEncryption::MODE mode)
-    : m_nb(4), m_blocklen(16), m_level(level), m_mode(mode)
+QAESEncryption::QAESEncryption(QAESEncryption::AES level, QAESEncryption::MODE mode, PADDING padding)
+    : m_nb(4), m_blocklen(16), m_level(level), m_mode(mode), m_padding(padding)
 {
     m_state = NULL;
 
@@ -83,6 +80,28 @@ QAESEncryption::QAESEncryption(QAESEncryption::AES level, QAESEncryption::MODE m
         break;
     }
 
+}
+QByteArray QAESEncryption::getPadding(int currSize, int alignment)
+{
+    QByteArray ret(0);
+    int size = (alignment - currSize % alignment) % alignment;
+    switch(m_padding)
+    {
+    case PADDING::ZERO:
+        ret.insert(0, size, 0x00);
+        break;
+    case PADDING::PKCS7:
+        ret.insert(0, size, size);
+        break;
+    case PADDING::ISO:
+        ret.insert(0, 0x80);
+        ret.insert(1, size, 0x00);
+        break;
+    default:
+        ret.insert(0, size, 0x00);
+        break;
+    }
+    return ret;
 }
 
 QByteArray QAESEncryption::expandKey(const QByteArray &key)
@@ -353,9 +372,8 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
     QByteArray alignedText(rawText);
     QByteArray ivTemp(iv);
 
-    //Fill array with zeros
-    QByteArray padding(getPadding(rawText.size(), m_blocklen), 0);
-    alignedText.append(padding);
+    //Fill array with padding
+    alignedText.append(getPadding(rawText.size(), m_blocklen));
 
     //Preparation for CFB
     if (m_mode == CFB)
