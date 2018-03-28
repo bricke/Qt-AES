@@ -27,7 +27,7 @@ QAESEncryption::Decrypt => decode(...)
 QAESEncryption::ExpandKey => expandKey(...)
 ```
 
-## Padding
+#### Padding
 Please note that as of today all input that does not comes as a muptiple of 16 will be padded with zeros to the closest multiple value.
 
 ### Example
