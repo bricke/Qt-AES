@@ -88,6 +88,8 @@ Static invocation without creating instances, 256 bit key, ECB mode, starting fr
   //Static invocation
   QByteArray encrypted = QAESEncryption::Crypt(QAESEncryption::AES_256, QAESEncryption::CBC, 
                           inputStr.toLocal8Bit(), hashKey, hashIV);
+  //...
+  // Removal of Padding via Static function
   QString decodedString = QString(QAESEncryption::RemovePadding(decodeText));
 
 ```
