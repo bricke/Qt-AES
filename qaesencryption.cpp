@@ -85,6 +85,8 @@ QByteArray QAESEncryption::getPadding(int currSize, int alignment)
 {
     QByteArray ret(0);
     int size = (alignment - currSize % alignment) % alignment;
+//    if (size == 0)
+//        size = alignment;
     switch(m_padding)
     {
     case PADDING::ZERO:
@@ -156,6 +158,29 @@ QByteArray QAESEncryption::expandKey(const QByteArray &key)
     roundKey.insert(i * 4 + 3, (quint8) roundKey.at((i - m_nk) * 4 + 3) ^ tempa[3]);
   }
   return roundKey;
+}
+
+QByteArray QAESEncryption::RemovePadding(const QByteArray &rawText, QAESEncryption::PADDING padding)
+{
+    QByteArray ret(rawText);
+    switch (padding)
+    {
+    case PADDING::ZERO:
+        //Works only if the last byte of the decoded array is not zero
+        while (ret.at(ret.length()-1) == 0x00)
+            ret.remove(ret.length()-1, 1);
+        break;
+    case PADDING::PKCS7:
+        ret.remove(ret.length() - ret.at(ret.length()-1), ret.at(ret.length()-1));
+        break;
+    case PADDING::ISO:
+        ret.truncate(ret.lastIndexOf(0x80));
+        break;
+    default:
+        //do nothing
+        break;
+    }
+    return ret;
 }
 
 // This function adds the round key to state.
