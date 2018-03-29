@@ -59,7 +59,6 @@ void AesTest::ECB128Crypt()
 {
     QByteArray hexText, outputHex;
     QAESEncryption encryption(QAESEncryption::AES_128, QAESEncryption::ECB);
-
     QCOMPARE(encryption.encode(in, key16), outECB128);
 }
 
@@ -103,7 +102,7 @@ void AesTest::ECB256Decrypt()
 
 void AesTest::ECB256String()
 {
-    QAESEncryption encryption(QAESEncryption::AES_256, QAESEncryption::ECB);
+    QAESEncryption encryption(QAESEncryption::AES_256, QAESEncryption::ECB, QAESEncryption::PADDING::ISO);
 
     QString inputStr("The Advanced Encryption Standard (AES), also known by its original name Rijndael "
                         "is a specification for the encryption of electronic data established by the U.S. "
@@ -113,12 +112,13 @@ void AesTest::ECB256String()
     QByteArray hashKey = QCryptographicHash::hash(key.toLocal8Bit(), QCryptographicHash::Sha256);
 
     QByteArray encodeText = encryption.encode(inputStr.toLocal8Bit(), hashKey);
+    QByteArray decodedText = QAESEncryption::RemovePadding(encryption.decode(encodeText, hashKey), QAESEncryption::PADDING::ISO);
 
-    QCOMPARE(QString(encryption.decode(encodeText, hashKey)), inputStr);
+    QCOMPARE(QString(decodedText), inputStr);
 }
 
 
-//==================CBC TESTING=========================
+////==================CBC TESTING=========================
 
 void AesTest::CBC128Crypt()
 {
@@ -148,6 +148,6 @@ void AesTest::CFB256String()
     QByteArray hashKey = QCryptographicHash::hash(key.toLocal8Bit(), QCryptographicHash::Sha256);
 
     QByteArray encodeText = encryption.encode(inputStr.toLocal8Bit(), hashKey, iv);
-
-    QCOMPARE(QString(encryption.decode(encodeText, hashKey, iv)), inputStr);
+    QByteArray decodedText = QAESEncryption::RemovePadding(encryption.decode(encodeText, hashKey, iv));
+    QCOMPARE(QString(decodedText), inputStr);
 }

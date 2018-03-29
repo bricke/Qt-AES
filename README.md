@@ -28,7 +28,12 @@ QAESEncryption::ExpandKey => expandKey(...)
 ```
 
 #### Padding
-Please note that as of today all input that does not comes as a muptiple of 16 will be padded with zeros to the closest multiple value.
+By default the padding method is `ISO`, however, the class supports:
+```
+ZERO
+PKCS7
+ISO
+```
 
 ### Example
 Sample code using a 128bit key in ECB mode
@@ -59,6 +64,10 @@ Example for 256bit CBC using QString
 
   QByteArray encodeText = encryption.encode(inputStr.toLocal8Bit(), hashKey, hashIV);
   QByteArray decodeText = encryption.decode(encodeText, hashKey, hashIV);
+
+  QString decodedString = QString(QAESEncryption::RemovePadding(decodeText));
+
+  //decodedString == inputStr !!
 ```
 
 ### Example via static invocation
