@@ -85,8 +85,7 @@ QByteArray QAESEncryption::getPadding(int currSize, int alignment)
 {
     QByteArray ret(0);
     int size = (alignment - currSize % alignment) % alignment;
-//    if (size == 0)
-//        size = alignment;
+    if (size == 0) return ret;
     switch(m_padding)
     {
     case PADDING::ZERO:
