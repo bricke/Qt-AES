@@ -112,7 +112,7 @@ void AesTest::ECB256String()
     QByteArray hashKey = QCryptographicHash::hash(key.toLocal8Bit(), QCryptographicHash::Sha256);
 
     QByteArray encodeText = encryption.encode(inputStr.toLocal8Bit(), hashKey);
-    QByteArray decodedText = QAESEncryption::RemovePadding(encryption.decode(encodeText, hashKey), QAESEncryption::PADDING::ISO);
+    QByteArray decodedText = encryption.removePadding(encryption.decode(encodeText, hashKey));
 
     QCOMPARE(QString(decodedText), inputStr);
 }
@@ -148,6 +148,6 @@ void AesTest::CFB256String()
     QByteArray hashKey = QCryptographicHash::hash(key.toLocal8Bit(), QCryptographicHash::Sha256);
 
     QByteArray encodeText = encryption.encode(inputStr.toLocal8Bit(), hashKey, iv);
-    QByteArray decodedText = QAESEncryption::RemovePadding(encryption.decode(encodeText, hashKey, iv));
+    QByteArray decodedText = encryption.removePadding(encryption.decode(encodeText, hashKey, iv));
     QCOMPARE(QString(decodedText), inputStr);
 }

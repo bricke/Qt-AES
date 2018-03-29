@@ -3,19 +3,44 @@
 /*
  * Static Functions
  * */
-QByteArray QAESEncryption::Crypt(QAESEncryption::AES level, QAESEncryption::MODE mode, const QByteArray &rawText, const QByteArray &key, const QByteArray &iv)
+QByteArray QAESEncryption::Crypt(QAESEncryption::AES level, QAESEncryption::MODE mode, const QByteArray &rawText,
+                                 const QByteArray &key, const QByteArray &iv, QAESEncryption::PADDING padding)
 {
-    return QAESEncryption(level, mode).encode(rawText, key, iv);
+    return QAESEncryption(level, mode, padding).encode(rawText, key, iv);
 }
 
-QByteArray QAESEncryption::Decrypt(QAESEncryption::AES level, QAESEncryption::MODE mode, const QByteArray &rawText, const QByteArray &key, const QByteArray &iv)
+QByteArray QAESEncryption::Decrypt(QAESEncryption::AES level, QAESEncryption::MODE mode, const QByteArray &rawText,
+                                   const QByteArray &key, const QByteArray &iv, QAESEncryption::PADDING padding)
 {
-     return QAESEncryption(level, mode).decode(rawText, key, iv);
+     return QAESEncryption(level, mode, padding).decode(rawText, key, iv);
 }
 
 QByteArray QAESEncryption::ExpandKey(QAESEncryption::AES level, QAESEncryption::MODE mode, const QByteArray &key)
 {
      return QAESEncryption(level, mode).expandKey(key);
+}
+
+QByteArray QAESEncryption::RemovePadding(const QByteArray &rawText, QAESEncryption::PADDING padding)
+{
+    QByteArray ret(rawText);
+    switch (padding)
+    {
+    case PADDING::ZERO:
+        //Works only if the last byte of the decoded array is not zero
+        while (ret.at(ret.length()-1) == 0x00)
+            ret.remove(ret.length()-1, 1);
+        break;
+    case PADDING::PKCS7:
+        ret.remove(ret.length() - ret.at(ret.length()-1), ret.at(ret.length()-1));
+        break;
+    case PADDING::ISO:
+        ret.truncate(ret.lastIndexOf(0x80));
+        break;
+    default:
+        //do nothing
+        break;
+    }
+    return ret;
 }
 /*
  * End Static function declarations
@@ -157,29 +182,6 @@ QByteArray QAESEncryption::expandKey(const QByteArray &key)
     roundKey.insert(i * 4 + 3, (quint8) roundKey.at((i - m_nk) * 4 + 3) ^ tempa[3]);
   }
   return roundKey;
-}
-
-QByteArray QAESEncryption::RemovePadding(const QByteArray &rawText, QAESEncryption::PADDING padding)
-{
-    QByteArray ret(rawText);
-    switch (padding)
-    {
-    case PADDING::ZERO:
-        //Works only if the last byte of the decoded array is not zero
-        while (ret.at(ret.length()-1) == 0x00)
-            ret.remove(ret.length()-1, 1);
-        break;
-    case PADDING::PKCS7:
-        ret.remove(ret.length() - ret.at(ret.length()-1), ret.at(ret.length()-1));
-        break;
-    case PADDING::ISO:
-        ret.truncate(ret.lastIndexOf(0x80));
-        break;
-    default:
-        //do nothing
-        break;
-    }
-    return ret;
 }
 
 // This function adds the round key to state.
@@ -462,6 +464,29 @@ QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &k
             //do nothing
             break;
         }
+    }
+    return ret;
+}
+
+QByteArray QAESEncryption::removePadding(const QByteArray &rawText)
+{
+    QByteArray ret(rawText);
+    switch (m_padding)
+    {
+    case PADDING::ZERO:
+        //Works only if the last byte of the decoded array is not zero
+        while (ret.at(ret.length()-1) == 0x00)
+            ret.remove(ret.length()-1, 1);
+        break;
+    case PADDING::PKCS7:
+        ret.remove(ret.length() - ret.at(ret.length()-1), ret.at(ret.length()-1));
+        break;
+    case PADDING::ISO:
+        ret.truncate(ret.lastIndexOf(0x80));
+        break;
+    default:
+        //do nothing
+        break;
     }
     return ret;
 }
