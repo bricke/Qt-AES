@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file>unit_test/longText.txt</file>
+    </qresource>
+</RCC>

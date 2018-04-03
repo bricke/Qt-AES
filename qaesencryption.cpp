@@ -3,37 +3,37 @@
 /*
  * Static Functions
  * */
-QByteArray QAESEncryption::Crypt(QAESEncryption::AES level, QAESEncryption::MODE mode, const QByteArray &rawText,
-                                 const QByteArray &key, const QByteArray &iv, QAESEncryption::PADDING padding)
+QByteArray QAESEncryption::Crypt(QAESEncryption::Aes level, QAESEncryption::Mode mode, const QByteArray &rawText,
+                                 const QByteArray &key, const QByteArray &iv, QAESEncryption::Padding padding)
 {
     return QAESEncryption(level, mode, padding).encode(rawText, key, iv);
 }
 
-QByteArray QAESEncryption::Decrypt(QAESEncryption::AES level, QAESEncryption::MODE mode, const QByteArray &rawText,
-                                   const QByteArray &key, const QByteArray &iv, QAESEncryption::PADDING padding)
+QByteArray QAESEncryption::Decrypt(QAESEncryption::Aes level, QAESEncryption::Mode mode, const QByteArray &rawText,
+                                   const QByteArray &key, const QByteArray &iv, QAESEncryption::Padding padding)
 {
      return QAESEncryption(level, mode, padding).decode(rawText, key, iv);
 }
 
-QByteArray QAESEncryption::ExpandKey(QAESEncryption::AES level, QAESEncryption::MODE mode, const QByteArray &key)
+QByteArray QAESEncryption::ExpandKey(QAESEncryption::Aes level, QAESEncryption::Mode mode, const QByteArray &key)
 {
      return QAESEncryption(level, mode).expandKey(key);
 }
 
-QByteArray QAESEncryption::RemovePadding(const QByteArray &rawText, QAESEncryption::PADDING padding)
+QByteArray QAESEncryption::RemovePadding(const QByteArray &rawText, QAESEncryption::Padding padding)
 {
     QByteArray ret(rawText);
     switch (padding)
     {
-    case PADDING::ZERO:
+    case Padding::ZERO:
         //Works only if the last byte of the decoded array is not zero
         while (ret.at(ret.length()-1) == 0x00)
             ret.remove(ret.length()-1, 1);
         break;
-    case PADDING::PKCS7:
+    case Padding::PKCS7:
         ret.remove(ret.length() - ret.at(ret.length()-1), ret.at(ret.length()-1));
         break;
-    case PADDING::ISO:
+    case Padding::ISO:
         ret.truncate(ret.lastIndexOf(0x80));
         break;
     default:
@@ -64,7 +64,8 @@ inline quint8 multiply(quint8 x, quint8 y){
  * */
 
 
-QAESEncryption::QAESEncryption(QAESEncryption::AES level, QAESEncryption::MODE mode, PADDING padding)
+QAESEncryption::QAESEncryption(Aes level, Mode mode,
+                               Padding padding)
     : m_nb(4), m_blocklen(16), m_level(level), m_mode(mode), m_padding(padding)
 {
     m_state = NULL;
@@ -113,13 +114,13 @@ QByteArray QAESEncryption::getPadding(int currSize, int alignment)
     if (size == 0) return ret;
     switch(m_padding)
     {
-    case PADDING::ZERO:
+    case Padding::ZERO:
         ret.insert(0, size, 0x00);
         break;
-    case PADDING::PKCS7:
+    case Padding::PKCS7:
         ret.insert(0, size, size);
         break;
-    case PADDING::ISO:
+    case Padding::ISO:
         ret.insert(0, 0x80);
         ret.insert(1, size, 0x00);
         break;
@@ -473,15 +474,15 @@ QByteArray QAESEncryption::removePadding(const QByteArray &rawText)
     QByteArray ret(rawText);
     switch (m_padding)
     {
-    case PADDING::ZERO:
+    case Padding::ZERO:
         //Works only if the last byte of the decoded array is not zero
         while (ret.at(ret.length()-1) == 0x00)
             ret.remove(ret.length()-1, 1);
         break;
-    case PADDING::PKCS7:
+    case Padding::PKCS7:
         ret.remove(ret.length() - ret.at(ret.length()-1), ret.at(ret.length()-1));
         break;
-    case PADDING::ISO:
+    case Padding::ISO:
         ret.truncate(ret.lastIndexOf(0x80));
         break;
     default:

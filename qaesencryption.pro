@@ -28,3 +28,9 @@ HEADERS += \
     qaesencryption.h \
     unit_test/aestest.h
 
+DISTFILES += \
+    unit_test/longText.txt
+
+RESOURCES += \
+    res.qrc
+

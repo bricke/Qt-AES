@@ -8,32 +8,33 @@ class QAESEncryption : public QObject
 {
     Q_OBJECT
 public:
-    enum AES {
+    enum Aes {
         AES_128,
         AES_192,
         AES_256
     };
 
-    enum MODE {
+    enum Mode {
         ECB,
         CBC,
         CFB
     };
 
-    enum PADDING {
+    enum Padding {
       ZERO,
       PKCS7,
       ISO
     };
 
-    static QByteArray Crypt(QAESEncryption::AES level, QAESEncryption::MODE mode, const QByteArray &rawText, const QByteArray &key,
-                            const QByteArray &iv = NULL, QAESEncryption::PADDING padding = QAESEncryption::ISO);
-    static QByteArray Decrypt(QAESEncryption::AES level, QAESEncryption::MODE mode, const QByteArray &rawText, const QByteArray &key,
-                              const QByteArray &iv = NULL, QAESEncryption::PADDING padding = QAESEncryption::ISO);
-    static QByteArray ExpandKey(QAESEncryption::AES level, QAESEncryption::MODE mode, const QByteArray &key);
-    static QByteArray RemovePadding(const QByteArray &rawText, QAESEncryption::PADDING padding);
+    static QByteArray Crypt(QAESEncryption::Aes level, QAESEncryption::Mode mode, const QByteArray &rawText, const QByteArray &key,
+                            const QByteArray &iv = NULL, QAESEncryption::Padding padding = QAESEncryption::ISO);
+    static QByteArray Decrypt(QAESEncryption::Aes level, QAESEncryption::Mode mode, const QByteArray &rawText, const QByteArray &key,
+                              const QByteArray &iv = NULL, QAESEncryption::Padding padding = QAESEncryption::ISO);
+    static QByteArray ExpandKey(QAESEncryption::Aes level, QAESEncryption::Mode mode, const QByteArray &key);
+    static QByteArray RemovePadding(const QByteArray &rawText, QAESEncryption::Padding padding);
 
-    QAESEncryption(QAESEncryption::AES level, QAESEncryption::MODE mode, QAESEncryption::PADDING padding = QAESEncryption::ISO);
+    QAESEncryption(QAESEncryption::Aes level, QAESEncryption::Mode mode,
+                   QAESEncryption::Padding padding = QAESEncryption::ISO);
 
     QByteArray encode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv = NULL);
     QByteArray decode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv = NULL);

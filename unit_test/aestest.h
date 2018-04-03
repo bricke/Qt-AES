@@ -27,6 +27,8 @@ private slots:
 
     void CFB256String();
 
+    void CFB256LongText();
+
     void cleanupTestCase(){}
 
 private:
