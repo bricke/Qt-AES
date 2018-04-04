@@ -109,26 +109,24 @@ QAESEncryption::QAESEncryption(Aes level, Mode mode,
 }
 QByteArray QAESEncryption::getPadding(int currSize, int alignment)
 {
-    QByteArray ret(0);
     int size = (alignment - currSize % alignment) % alignment;
-    if (size == 0) return ret;
+    if (size == 0) return QByteArray();
     switch(m_padding)
     {
     case Padding::ZERO:
-        ret.insert(0, size, 0x00);
+        return QByteArray(size, 0x00);
         break;
     case Padding::PKCS7:
-        ret.insert(0, size, size);
+        return QByteArray(size,size);
         break;
     case Padding::ISO:
-        ret.insert(0, 0x80);
-        ret.insert(1, size, 0x00);
+        return QByteArray (size-1, 0x00).prepend(0x80);
         break;
     default:
-        ret.insert(0, size, 0x00);
+        return QByteArray(size, 0x00);
         break;
     }
-    return ret;
+    return QByteArray(size, 0x00);
 }
 
 QByteArray QAESEncryption::expandKey(const QByteArray &key)
