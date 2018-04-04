@@ -398,13 +398,16 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
     QByteArray expandedKey = expandKey(key);
     QByteArray alignedText(rawText);
     QByteArray ivTemp(iv);
+    QByteArray ofbTemp;
 
     //Fill array with padding
     alignedText.append(getPadding(rawText.size(), m_blocklen));
 
     //Preparation for CFB
-    if (m_mode == CFB)
+    if (m_mode == CFB || m_mode == OFB)
         ret.append(byteXor(alignedText.mid(0, m_blocklen), cipher(expandedKey, iv)));
+    if (m_mode == OFB)
+        ofbTemp.append(cipher(expandedKey, iv));
 
     //Looping thru all blocks
     for(int i=0; i < alignedText.size(); i+= m_blocklen){
@@ -422,6 +425,15 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
             if (i+m_blocklen < alignedText.size())
                 ret.append(byteXor(alignedText.mid(i+m_blocklen, m_blocklen),
                                    cipher(expandedKey, ret.mid(i, m_blocklen))));
+            break;
+        case OFB:
+            if (i+m_blocklen < alignedText.size())
+            {
+                ret.append(byteXor(alignedText.mid(i+m_blocklen, m_blocklen),
+                                   cipher(expandedKey, ofbTemp.mid(i-m_blocklen, m_blocklen))));
+                ofbTemp.append(cipher(expandedKey, ofbTemp.mid(i-m_blocklen, m_blocklen)));
+            }
+
             break;
         default:
             //do nothing
