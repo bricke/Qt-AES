@@ -26,14 +26,20 @@ QAESEncryption::Crypt => encode(...)
 QAESEncryption::Decrypt => decode(...)
 QAESEncryption::ExpandKey => expandKey(...)
 ```
+#### Modes
+The class supports the following operating modes
+
+* ECB
+* CBC
+* CFB
+* OFB
 
 #### Padding
 By default the padding method is `ISO`, however, the class supports:
-```
-ZERO
-PKCS7
-ISO
-```
+
+* ZERO
+* PKCS7
+* ISO
 
 ### Example
 Sample code using a 128bit key in ECB mode
