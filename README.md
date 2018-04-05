@@ -6,18 +6,18 @@ Supports all key sizes - 128/192/256 bits - ECB, CBC and CFB modes
 
 ### Available Methods
 ```
-//Encode of rawText with key
-//iv is used in CBC mode
-//return the encrypted byte array
+// Encode of rawText with key
+// iv is used in CBC mode
+// return the encrypted byte array
 QByteArray encode(const QByteArray rawText, const QByteArray key, const QByteArray iv = NULL);
 
-//Decode of rawText with key
-//iv is used in CBC mode
-//return the decrypted byte array
+// Decode of rawText with key
+// iv is used in CBC mode
+// return the decrypted byte array
 QByteArray decode(const QByteArray rawText, const QByteArray key, const QByteArray iv = NULL);
 
-//Key expansion in Rijndael schedule
-//return the new expanded key as byte array
+// Key expansion in Rijndael schedule
+// return the new expanded key as byte array
 QByteArray expandKey(const QByteArray key);
 ```
 The same methods are available as static calls
@@ -26,6 +26,14 @@ QAESEncryption::Crypt => encode(...)
 QAESEncryption::Decrypt => decode(...)
 QAESEncryption::ExpandKey => expandKey(...)
 ```
+
+#### AES Levels
+The class supports all AES key lenghts
+
+* AES_128
+* AES_192
+* AES_256
+
 #### Modes
 The class supports the following operating modes
 
@@ -46,10 +54,10 @@ Sample code using a 128bit key in ECB mode
 ```
 #include "qaesencryption.h"
 
-  QAESEncryption encryption(QAESEncryption::AES_128, QAESEncryption::ECB);
-  QByteArray encodedText = encryption.encode(plainText, key);
+QAESEncryption encryption(QAESEncryption::AES_128, QAESEncryption::ECB);
+QByteArray encodedText = encryption.encode(plainText, key);
 
-  QByteArray decodedText = encryption.decode(encodedText, key);
+QByteArray decodedText = encryption.decode(encodedText, key);
 ```
 
 Example for 256bit CBC using QString
@@ -57,23 +65,23 @@ Example for 256bit CBC using QString
 #include <QCryptographicHash>
 #include "qaesencryption.h"
 
-  QAESEncryption encryption(QAESEncryption::AES_256, QAESEncryption::CBC);
+QAESEncryption encryption(QAESEncryption::AES_256, QAESEncryption::CBC);
 
-  QString inputStr("The Advanced Encryption Standard (AES), also known by its original name Rijndael "
-                   "is a specification for the encryption of electronic data established by the U.S. "
-                  "National Institute of Standards and Technology (NIST) in 2001");
-  QString key("your-string-key");
-  QString iv("your-IV-vector");
+QString inputStr("The Advanced Encryption Standard (AES), also known by its original name Rijndael "
+                 "is a specification for the encryption of electronic data established by the U.S. "
+                "National Institute of Standards and Technology (NIST) in 2001");
+QString key("your-string-key");
+QString iv("your-IV-vector");
 
-  QByteArray hashKey = QCryptographicHash::hash(key.toLocal8Bit(), QCryptographicHash::Sha256);
-  QByteArray hashIV = QCryptographicHash::hash(iv.toLocal8Bit(), QCryptographicHash::Md5);
+QByteArray hashKey = QCryptographicHash::hash(key.toLocal8Bit(), QCryptographicHash::Sha256);
+QByteArray hashIV = QCryptographicHash::hash(iv.toLocal8Bit(), QCryptographicHash::Md5);
 
-  QByteArray encodeText = encryption.encode(inputStr.toLocal8Bit(), hashKey, hashIV);
-  QByteArray decodeText = encryption.decode(encodeText, hashKey, hashIV);
+QByteArray encodeText = encryption.encode(inputStr.toLocal8Bit(), hashKey, hashIV);
+QByteArray decodeText = encryption.decode(encodeText, hashKey, hashIV);
 
-  QString decodedString = QString(encryption.removePadding(decodeText));
+QString decodedString = QString(encryption.removePadding(decodeText));
 
-  //decodedString == inputStr !!
+//decodedString == inputStr !!
 ```
 
 ### Example via static invocation
@@ -82,21 +90,21 @@ Static invocation without creating instances, 256 bit key, ECB mode, starting fr
 #include <QCryptographicHash>
 #include "qaesencryption.h"
 
-  QString inputStr("The Advanced Encryption Standard (AES), also known by its original name Rijndael "
-                   "is a specification for the encryption of electronic data established by the U.S. "
-                  "National Institute of Standards and Technology (NIST) in 2001");
-  QString key("your-string-key");
-  QString iv("your-IV-vector");
+QString inputStr("The Advanced Encryption Standard (AES), also known by its original name Rijndael "
+                 "is a specification for the encryption of electronic data established by the U.S. "
+                "National Institute of Standards and Technology (NIST) in 2001");
+QString key("your-string-key");
+QString iv("your-IV-vector");
 
-  QByteArray hashKey = QCryptographicHash::hash(key.toLocal8Bit(), QCryptographicHash::Sha256);
-  QByteArray hashIV = QCryptographicHash::hash(iv.toLocal8Bit(), QCryptographicHash::Md5);
+QByteArray hashKey = QCryptographicHash::hash(key.toLocal8Bit(), QCryptographicHash::Sha256);
+QByteArray hashIV = QCryptographicHash::hash(iv.toLocal8Bit(), QCryptographicHash::Md5);
 
-  //Static invocation
-  QByteArray encrypted = QAESEncryption::Crypt(QAESEncryption::AES_256, QAESEncryption::CBC, 
-                          inputStr.toLocal8Bit(), hashKey, hashIV);
-  //...
-  // Removal of Padding via Static function
-  QString decodedString = QString(QAESEncryption::RemovePadding(decodeText));
+//Static invocation
+QByteArray encrypted = QAESEncryption::Crypt(QAESEncryption::AES_256, QAESEncryption::CBC, 
+                        inputStr.toLocal8Bit(), hashKey, hashIV);
+//...
+// Removal of Padding via Static function
+QString decodedString = QString(QAESEncryption::RemovePadding(decodeText));
 
 ```
 
