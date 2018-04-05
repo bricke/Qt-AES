@@ -1,5 +1,6 @@
 #include "aestest.h"
 
+#include <QDebug>
 #include <QByteArray>
 #include <QCryptographicHash>
 #include <QFile>
@@ -139,7 +140,7 @@ void AesTest::CBC128Decrypt()
 
 void AesTest::CFB256String()
 {
-    QAESEncryption encryption(QAESEncryption::AES_256, QAESEncryption::CFB);
+    QAESEncryption encryption(QAESEncryption::AES_256, QAESEncryption::CFB, QAESEncryption::PKCS7);
 
     QString inputStr("The Advanced Encryption Standard (AES), also known by its original name Rijndael "
                         "is a specification for the encryption of electronic data established by the U.S. "
@@ -170,4 +171,20 @@ void AesTest::CFB256LongText()
     QByteArray encodeText = encryption.encode(input, hashKey, iv);
     QByteArray decodedText = encryption.removePadding(encryption.decode(encodeText, hashKey, iv));
     QCOMPARE(decodedText, input);
+}
+
+void AesTest::OFB256String()
+{
+    QAESEncryption encryption(QAESEncryption::AES_128, QAESEncryption::OFB, QAESEncryption::PKCS7);
+
+    QString inputStr("The Advanced Encryption Standard (AES), also known by its original name Rijndael "
+                        "is a specification for the encryption of electronic data established by the U.S. "
+                        "National Institute of Standards and Technology (NIST) in 2001");
+    QString key("123456789123");
+
+    QByteArray hashKey = QCryptographicHash::hash(key.toLocal8Bit(), QCryptographicHash::Sha256);
+    QByteArray encodeText = encryption.encode(inputStr.toLocal8Bit(), hashKey, iv);
+
+    QByteArray decodedText = encryption.removePadding(encryption.decode(encodeText, hashKey, iv));
+    QCOMPARE(inputStr, decodedText);
 }
