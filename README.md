@@ -6,18 +6,18 @@ Supports all key sizes - 128/192/256 bits - ECB, CBC and CFB modes
 
 ### Available Methods
 ```
-//Encode of rawText with key
-//iv is used in CBC mode
-//return the encrypted byte array
+// Encode of rawText with key
+// iv is used in CBC mode
+// return the encrypted byte array
 QByteArray encode(const QByteArray rawText, const QByteArray key, const QByteArray iv = NULL);
 
-//Decode of rawText with key
-//iv is used in CBC mode
-//return the decrypted byte array
+// Decode of rawText with key
+// iv is used in CBC mode
+// return the decrypted byte array
 QByteArray decode(const QByteArray rawText, const QByteArray key, const QByteArray iv = NULL);
 
-//Key expansion in Rijndael schedule
-//return the new expanded key as byte array
+// Key expansion in Rijndael schedule
+// return the new expanded key as byte array
 QByteArray expandKey(const QByteArray key);
 ```
 The same methods are available as static calls
@@ -26,6 +26,14 @@ QAESEncryption::Crypt => encode(...)
 QAESEncryption::Decrypt => decode(...)
 QAESEncryption::ExpandKey => expandKey(...)
 ```
+
+#### AES Levels
+The class supports all AES key lenghts
+
+* AES_128
+* AES_192
+* AES_256
+
 #### Modes
 The class supports the following operating modes
 
