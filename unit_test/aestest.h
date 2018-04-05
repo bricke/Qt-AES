@@ -29,6 +29,7 @@ private slots:
 
     void CFB256LongText();
 
+    void OFB128Crypt();
     void OFB256String();
 
     void cleanupTestCase(){}
@@ -44,6 +45,7 @@ private:
     QByteArray outECB256;
     QByteArray inCBC128;
     QByteArray outCBC128;
+    QByteArray outOFB128;
 };
 
 #endif // AESTEST_H
