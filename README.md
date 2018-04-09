@@ -1,6 +1,6 @@
 # Qt-AES
 Small and portable AES encryption class for Qt.
-Supports all key sizes - 128/192/256 bits - ECB, CBC and CFB modes
+Supports all key sizes - 128/192/256 bits - ECB, CBC, CFB and OFB modes
 
 ## Usage
 
