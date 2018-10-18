@@ -124,3 +124,6 @@ Please use the GitHub issue tracking to report suggestions or issues.
 
 ## License
 This software is provided under the [UNLICENSE](http://unlicense.org/)
+
+## Known Issues
+Please take a look at the list of currently open issues
