@@ -22,6 +22,9 @@ QByteArray QAESEncryption::ExpandKey(QAESEncryption::Aes level, QAESEncryption::
 
 QByteArray QAESEncryption::RemovePadding(const QByteArray &rawText, QAESEncryption::Padding padding)
 {
+    if (rawText.isEmpty())
+        return rawText;
+
     QByteArray ret(rawText);
     switch (padding)
     {
@@ -34,8 +37,24 @@ QByteArray QAESEncryption::RemovePadding(const QByteArray &rawText, QAESEncrypti
         ret.remove(ret.length() - ret.at(ret.length()-1), ret.at(ret.length()-1));
         break;
     case Padding::ISO:
-        ret.truncate(ret.lastIndexOf(0x80));
+    {
+        // Find the last byte which is not zero
+        int marker_index = ret.length() - 1;
+        for (; marker_index >= 0; --marker_index)
+        {
+            if (ret.at(marker_index) != 0x00)
+            {
+                break;
+            }
+        }
+
+        // And check if it's the byte for marking padding
+        if (ret.at(marker_index) == static_cast<char>(0x80))
+        {
+            ret.truncate(marker_index);
+        }
         break;
+    }
     default:
         //do nothing
         break;
@@ -489,23 +508,5 @@ QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &k
 
 QByteArray QAESEncryption::removePadding(const QByteArray &rawText)
 {
-    QByteArray ret(rawText);
-    switch (m_padding)
-    {
-    case Padding::ZERO:
-        //Works only if the last byte of the decoded array is not zero
-        while (ret.at(ret.length()-1) == 0x00)
-            ret.remove(ret.length()-1, 1);
-        break;
-    case Padding::PKCS7:
-        ret.remove(ret.length() - ret.at(ret.length()-1), ret.at(ret.length()-1));
-        break;
-    case Padding::ISO:
-        ret.truncate(ret.lastIndexOf(0x80));
-        break;
-    default:
-        //do nothing
-        break;
-    }
-    return ret;
+    return RemovePadding(rawText, m_padding);
 }
