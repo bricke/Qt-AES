@@ -508,5 +508,5 @@ QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &k
 
 QByteArray QAESEncryption::removePadding(const QByteArray &rawText)
 {
-    return RemovePadding(rawText, m_padding);
+    return RemovePadding(rawText, (Padding) m_padding);
 }

@@ -194,5 +194,23 @@ void AesTest::OFB256String()
     QByteArray encodeText = encryption.encode(inputStr.toLocal8Bit(), hashKey, iv);
 
     QByteArray decodedText = encryption.removePadding(encryption.decode(encodeText, hashKey, iv));
-    QCOMPARE(inputStr, decodedText);
+    QCOMPARE(inputStr, QString(decodedText));
+}
+
+void AesTest::CBC256StringEven()
+{
+    QAESEncryption encryption(QAESEncryption::AES_256, QAESEncryption::CBC);
+
+    //16 byte string
+    QString inputStr("1234567890123456");
+    QString key("123456789123");
+
+    QByteArray hashKey = QCryptographicHash::hash(key.toLocal8Bit(), QCryptographicHash::Sha256);
+    QByteArray encodeText = encryption.encode(inputStr.toLocal8Bit(), hashKey, iv);
+    QByteArray decodeText = encryption.decode(encodeText, hashKey, iv);
+
+    QString decodedString = QString(encryption.removePadding(decodeText));
+
+    QCOMPARE(QString(decodeText), decodedString);
+
 }

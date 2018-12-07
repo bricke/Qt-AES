@@ -32,6 +32,8 @@ private slots:
     void OFB128Crypt();
     void OFB256String();
 
+    void CBC256StringEven();
+
     void cleanupTestCase(){}
 
 private:
