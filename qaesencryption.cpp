@@ -34,7 +34,7 @@ QByteArray QAESEncryption::RemovePadding(const QByteArray &rawText, QAESEncrypti
             ret.remove(ret.length()-1, 1);
         break;
     case Padding::PKCS7:
-        ret.remove(ret.length() - ret.at(ret.length()-1), ret.at(ret.length()-1));
+        ret.remove(ret.length() - ret.back(), ret.back());
         break;
     case Padding::ISO:
     {
@@ -129,23 +129,25 @@ QAESEncryption::QAESEncryption(Aes level, Mode mode,
 QByteArray QAESEncryption::getPadding(int currSize, int alignment)
 {
     int size = (alignment - currSize % alignment) % alignment;
-    if (size == 0) return QByteArray();
     switch(m_padding)
     {
     case Padding::ZERO:
         return QByteArray(size, 0x00);
         break;
     case Padding::PKCS7:
-        return QByteArray(size,size);
+        if (size == 0)
+            size = alignment;
+        return QByteArray(size, size);
         break;
     case Padding::ISO:
-        return QByteArray (size-1, 0x00).prepend(0x80);
+        if (size > 0)
+            return QByteArray (size - 1, 0x00).prepend(0x80);
         break;
     default:
         return QByteArray(size, 0x00);
         break;
     }
-    return QByteArray(size, 0x00);
+    return QByteArray();
 }
 
 QByteArray QAESEncryption::expandKey(const QByteArray &key)
