@@ -197,7 +197,7 @@ void AesTest::OFB256String()
     QCOMPARE(inputStr, QString(decodedText));
 }
 
-void AesTest::CBC256StringEven()
+void AesTest::CBC256StringEvenISO()
 {
     QAESEncryption encryption(QAESEncryption::AES_256, QAESEncryption::CBC);
 
@@ -213,4 +213,21 @@ void AesTest::CBC256StringEven()
 
     QCOMPARE(QString(decodeText), decodedString);
 
+}
+
+void AesTest::CBC256StringEvenPKCS7()
+{
+    QAESEncryption encryption(QAESEncryption::AES_256, QAESEncryption::CBC, QAESEncryption::PKCS7);
+
+    //16 byte string
+    QString inputStr("1234567890123456");
+    int blockLen = 16;
+    QString key("123456789123");
+
+    QByteArray hashKey = QCryptographicHash::hash(key.toLocal8Bit(), QCryptographicHash::Sha256);
+    QByteArray encodeText = encryption.encode(inputStr.toLocal8Bit(), hashKey, iv);
+    QByteArray decodeText = encryption.decode(encodeText, hashKey, iv);
+    QByteArray padding = decodeText.remove(0, encryption.removePadding(decodeText).length());
+
+    QCOMPARE(padding.size(), blockLen);
 }
