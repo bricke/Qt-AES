@@ -221,7 +221,7 @@ void AesTest::CBC256StringEvenPKCS7()
 
     //16 byte string
     QString inputStr("1234567890123456");
-    int blockLen = inputStr.length();
+    int blockLen = 16;
     QString key("123456789123");
 
     QByteArray hashKey = QCryptographicHash::hash(key.toLocal8Bit(), QCryptographicHash::Sha256);
