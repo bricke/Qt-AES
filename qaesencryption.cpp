@@ -34,7 +34,11 @@ QByteArray QAESEncryption::RemovePadding(const QByteArray &rawText, QAESEncrypti
             ret.remove(ret.length()-1, 1);
         break;
     case Padding::PKCS7:
+#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
         ret.remove(ret.length() - ret.back(), ret.back());
+#else
+        ret.remove(ret.length() - ret.at(ret.length() - 1), ret.at(ret.length() - 1));
+#endif
         break;
     case Padding::ISO:
     {
