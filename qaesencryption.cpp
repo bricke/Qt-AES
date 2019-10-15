@@ -335,11 +335,11 @@ void QAESEncryption::invShiftRows()
     it[6]  = (quint8)temp;
 
     //Shift 3
-    temp   = (quint8)it[15];
-    it[15] = (quint8)it[3];
-    it[3]  = (quint8)it[7];
+    temp   = (quint8)it[7];
     it[7]  = (quint8)it[11];
-    it[11] = (quint8)temp;
+    it[11] = (quint8)it[15];
+    it[15] = (quint8)it[3];
+    it[3]  = (quint8)temp;
 }
 
 QByteArray QAESEncryption::byteXor(const QByteArray &a, const QByteArray &b)
