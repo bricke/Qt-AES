@@ -1,5 +1,8 @@
 #include "qaesencryption.h"
 
+#define cpuid(func, ax, bx, cx, dx)\
+    __asm__ __volatile__("cpuid": "=a" (ax), "=b" (bx), "=c" (cx), "=d" (dx) : "a" (func));
+
 /*
  * Static Functions
  * */
@@ -92,6 +95,7 @@ QAESEncryption::QAESEncryption(Aes level, Mode mode,
     : m_nb(4), m_blocklen(16), m_level(level), m_mode(mode), m_padding(padding)
 {
     m_state = NULL;
+    m_aesNIAvailable = aesniAvailable();
 
     switch (level)
     {
@@ -206,6 +210,14 @@ QByteArray QAESEncryption::expandKey(const QByteArray &key)
     roundKey.insert(i * 4 + 3, (quint8) roundKey.at((i - m_nk) * 4 + 3) ^ tempa[3]);
   }
   return roundKey;
+}
+
+bool QAESEncryption::aesniAvailable()
+{
+    uint a,b,c,d;
+    cpuid(1, a, b, c, d);
+    int ret = c & 0x2000000;
+    return ret;
 }
 
 // This function adds the round key to state.

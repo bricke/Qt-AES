@@ -56,6 +56,7 @@ private:
     int m_nr;
     int m_expandedKey;
     int m_padding;
+    bool m_aesNIAvailable;
     QByteArray* m_state;
 
     struct AES256{
@@ -78,6 +79,8 @@ private:
         int nr = 10;
         int expandedKey = 176;
     };
+
+    bool aesniAvailable();
 
     quint8 getSBoxValue(quint8 num){return sbox[num];}
     quint8 getSBoxInvert(quint8 num){return rsbox[num];}
