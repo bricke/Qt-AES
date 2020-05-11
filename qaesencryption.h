@@ -4,6 +4,12 @@
 #include <QObject>
 #include <QByteArray>
 
+#ifdef __linux__
+#ifndef __LP64__
+#define do_rdtsc _do_rdtsc
+#endif
+#endif
+
 class QAESEncryption : public QObject
 {
     Q_OBJECT

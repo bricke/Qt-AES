@@ -9,15 +9,29 @@ CONFIG -= app_bundle
 
 TEMPLATE = app
 
-SOURCES += main.cpp \
-    qaesencryption.cpp \
-    unit_test/aestest.cpp
+yasm.name = yasm ${QMAKE_FILE_IN}.s
+yasm.input = ASM_FILES
+yasm.variable_out = OBJECTS
+yasm.commands = yasm D__linux__ -g dwarf2 -f elf64 ${QMAKE_FILE_IN} -o ${QMAKE_FILE_OUT}
+yasm.output = ${QMAKE_FILE_IN_PATH}${QMAKE_FILE_IN_BASE}$${first(QMAKE_EXT_OBJ)}
+yasm.CONFIG += target_predeps
+
+ASM_FILES += intel_aes_lib/asm/x64/do_rdtsc.s
+ASM_FILES += intel_aes_lib/asm/x64/iaesx64.s
+
+QMAKE_EXTRA_COMPILERS  += yasm
+
 
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which as been marked deprecated (the exact warnings
 # depend on your compiler). Please consult the documentation of the
 # deprecated API in order to know how to port your code away from it.
 DEFINES += QT_DEPRECATED_WARNINGS
+
+DEFINES += USE_INTEL_AES_IF_AVAILABLE
+QMAKE_CXXFLAGS += -maes
+
+INCLUDEPATH += intel_aes_lib/include/
 
 # You can also make your code fail to compile if you use deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -26,7 +40,12 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 HEADERS += \
     qaesencryption.h \
-    unit_test/aestest.h
+    unit_test/aestest.h \
+
+SOURCES += main.cpp \
+    qaesencryption.cpp \
+    unit_test/aestest.cpp \
+    aesni-util.c
 
 DISTFILES += \
     unit_test/longText.txt

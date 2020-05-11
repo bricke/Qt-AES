@@ -1,4 +1,10 @@
 #include "qaesencryption.h"
+#include <QDebug>
+
+#ifdef USE_INTEL_AES_IF_AVAILABLE
+#include "aesni-util.c"
+#endif
+
 
 #define cpuid(func, ax, bx, cx, dx)\
     __asm__ __volatile__("cpuid": "=a" (ax), "=b" (bx), "=c" (cx), "=d" (dx) : "a" (func));
@@ -93,9 +99,13 @@ inline quint8 multiply(quint8 x, quint8 y){
 QAESEncryption::QAESEncryption(Aes level, Mode mode,
                                Padding padding)
     : m_nb(4), m_blocklen(16), m_level(level), m_mode(mode), m_padding(padding)
+    , m_aesNIAvailable(false)
 {
     m_state = NULL;
+
+#ifdef USE_INTEL_AES_IF_AVAILABLE
     m_aesNIAvailable = aesniAvailable();
+#endif
 
     switch (level)
     {
@@ -216,8 +226,7 @@ bool QAESEncryption::aesniAvailable()
 {
     uint a,b,c,d;
     cpuid(1, a, b, c, d);
-    int ret = c & 0x2000000;
-    return ret;
+    return (c & 0x2000000);
 }
 
 // This function adds the round key to state.

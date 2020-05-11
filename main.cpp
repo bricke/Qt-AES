@@ -1,6 +1,9 @@
 #include <QCoreApplication>
 #include <QTest>
+
+#ifdef __cplusplus
 #include "unit_test/aestest.h"
+#endif
 
 int main(int argc, char *argv[])
 {

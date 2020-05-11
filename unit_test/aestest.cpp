@@ -54,6 +54,8 @@ void AesTest::initTestCase()
         inCBC128.append(text_cbc[i]);
         outCBC128.append(output_cbc[i]);
     }
+
+    //intel_AES_enc128_CBC(in_text, out_text, key_16, 1, iv_16);
 }
 
 
