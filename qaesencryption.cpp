@@ -1,5 +1,6 @@
 #include "qaesencryption.h"
 #include <QDebug>
+#include <QVector>
 
 #ifdef USE_INTEL_AES_IF_AVAILABLE
 #include "aesni-util.c"
@@ -104,7 +105,7 @@ QAESEncryption::QAESEncryption(Aes level, Mode mode,
     m_state = NULL;
 
 #ifdef USE_INTEL_AES_IF_AVAILABLE
-    m_aesNIAvailable = aesniAvailable();
+    m_aesNIAvailable = check_for_aes_instructions();
 #endif
 
     switch (level)
@@ -170,56 +171,94 @@ QByteArray QAESEncryption::getPadding(int currSize, int alignment)
 
 QByteArray QAESEncryption::expandKey(const QByteArray &key)
 {
-  int i, k;
-  quint8 tempa[4]; // Used for the column/row operations
-  QByteArray roundKey(key);
 
-  // The first round key is the key itself.
-  // ...
-
-  // All other round keys are found from the previous round keys.
-  //i == Nk
-  for(i = m_nk; i < m_nb * (m_nr + 1); i++)
+#ifdef USE_INTEL_AES_IF_AVAILABLE
+  if (m_aesNIAvailable){
+      switch(m_level) {
+      case AES_128: {
+          AES128 aes128;
+          char ret[aes128.expandedKey];
+          UCHAR uchar_key[key.size()];
+          memcpy(uchar_key, key.data(), key.size());
+          iEncExpandKey128(uchar_key, (uchar*) ret);
+          return QByteArray(ret, aes128.expandedKey);
+      }
+          break;
+      case AES_192: {
+          AES192 aes192;
+          char ret[aes192.expandedKey];
+          UCHAR uchar_key[key.size()];
+          memcpy(uchar_key, key.data(), key.size());
+          iEncExpandKey192(uchar_key, (uchar*)ret);
+          return QByteArray(ret, aes192.expandedKey);
+      }
+          break;
+      case AES_256: {
+          AES256 aes256;
+          char ret[aes256.expandedKey];
+          UCHAR uchar_key[key.size()];
+          memcpy(uchar_key, key.data(), key.size());
+          iEncExpandKey256(uchar_key, (uchar*)ret);
+          return QByteArray(ret, aes256.expandedKey);
+      }
+          break;
+      default:
+          return QByteArray();
+          break;
+      }
+  } else
+#endif
   {
-    tempa[0] = (quint8) roundKey.at((i-1) * 4 + 0);
-    tempa[1] = (quint8) roundKey.at((i-1) * 4 + 1);
-    tempa[2] = (quint8) roundKey.at((i-1) * 4 + 2);
-    tempa[3] = (quint8) roundKey.at((i-1) * 4 + 3);
 
-    if (i % m_nk == 0)
-    {
-        // This function shifts the 4 bytes in a word to the left once.
-        // [a0,a1,a2,a3] becomes [a1,a2,a3,a0]
+      int i, k;
+      quint8 tempa[4]; // Used for the column/row operations
+      QByteArray roundKey(key); // The first round key is the key itself.
 
-        // Function RotWord()
-        k = tempa[0];
-        tempa[0] = tempa[1];
-        tempa[1] = tempa[2];
-        tempa[2] = tempa[3];
-        tempa[3] = k;
+      // All other round keys are found from the previous round keys.
+      //i == Nk
+      for(i = m_nk; i < m_nb * (m_nr + 1); i++)
+      {
+        tempa[0] = (quint8) roundKey.at((i-1) * 4 + 0);
+        tempa[1] = (quint8) roundKey.at((i-1) * 4 + 1);
+        tempa[2] = (quint8) roundKey.at((i-1) * 4 + 2);
+        tempa[3] = (quint8) roundKey.at((i-1) * 4 + 3);
 
-        // Function Subword()
-        tempa[0] = getSBoxValue(tempa[0]);
-        tempa[1] = getSBoxValue(tempa[1]);
-        tempa[2] = getSBoxValue(tempa[2]);
-        tempa[3] = getSBoxValue(tempa[3]);
+        if (i % m_nk == 0)
+        {
+            // This function shifts the 4 bytes in a word to the left once.
+            // [a0,a1,a2,a3] becomes [a1,a2,a3,a0]
 
-        tempa[0] =  tempa[0] ^ Rcon[i/m_nk];
-    }
-    if (m_level == AES_256 && i % m_nk == 4)
-    {
-        // Function Subword()
-        tempa[0] = getSBoxValue(tempa[0]);
-        tempa[1] = getSBoxValue(tempa[1]);
-        tempa[2] = getSBoxValue(tempa[2]);
-        tempa[3] = getSBoxValue(tempa[3]);
-    }
-    roundKey.insert(i * 4 + 0, (quint8) roundKey.at((i - m_nk) * 4 + 0) ^ tempa[0]);
-    roundKey.insert(i * 4 + 1, (quint8) roundKey.at((i - m_nk) * 4 + 1) ^ tempa[1]);
-    roundKey.insert(i * 4 + 2, (quint8) roundKey.at((i - m_nk) * 4 + 2) ^ tempa[2]);
-    roundKey.insert(i * 4 + 3, (quint8) roundKey.at((i - m_nk) * 4 + 3) ^ tempa[3]);
+            // Function RotWord()
+            k = tempa[0];
+            tempa[0] = tempa[1];
+            tempa[1] = tempa[2];
+            tempa[2] = tempa[3];
+            tempa[3] = k;
+
+            // Function Subword()
+            tempa[0] = getSBoxValue(tempa[0]);
+            tempa[1] = getSBoxValue(tempa[1]);
+            tempa[2] = getSBoxValue(tempa[2]);
+            tempa[3] = getSBoxValue(tempa[3]);
+
+            tempa[0] =  tempa[0] ^ Rcon[i/m_nk];
+        }
+
+        if (m_level == AES_256 && i % m_nk == 4)
+        {
+            // Function Subword()
+            tempa[0] = getSBoxValue(tempa[0]);
+            tempa[1] = getSBoxValue(tempa[1]);
+            tempa[2] = getSBoxValue(tempa[2]);
+            tempa[3] = getSBoxValue(tempa[3]);
+        }
+        roundKey.insert(i * 4 + 0, (quint8) roundKey.at((i - m_nk) * 4 + 0) ^ tempa[0]);
+        roundKey.insert(i * 4 + 1, (quint8) roundKey.at((i - m_nk) * 4 + 1) ^ tempa[1]);
+        roundKey.insert(i * 4 + 2, (quint8) roundKey.at((i - m_nk) * 4 + 2) ^ tempa[2]);
+        roundKey.insert(i * 4 + 3, (quint8) roundKey.at((i - m_nk) * 4 + 3) ^ tempa[3]);
+      }
+      return roundKey;
   }
-  return roundKey;
 }
 
 bool QAESEncryption::aesniAvailable()
