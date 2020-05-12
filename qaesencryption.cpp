@@ -261,13 +261,6 @@ QByteArray QAESEncryption::expandKey(const QByteArray &key)
   }
 }
 
-bool QAESEncryption::aesniAvailable()
-{
-    uint a,b,c,d;
-    cpuid(1, a, b, c, d);
-    return (c & 0x2000000);
-}
-
 // This function adds the round key to state.
 // The round key is added to the state by an XOR function.
 void QAESEncryption::addRoundKey(const quint8 round, const QByteArray expKey)

@@ -86,8 +86,6 @@ private:
         int expandedKey = 176;
     };
 
-    bool aesniAvailable();
-
     quint8 getSBoxValue(quint8 num){return sbox[num];}
     quint8 getSBoxInvert(quint8 num){return rsbox[num];}
 
