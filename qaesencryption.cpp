@@ -3,7 +3,7 @@
 #include <QVector>
 
 #ifdef USE_INTEL_AES_IF_AVAILABLE
-#include "aesni-util.c"
+#include "aesni/aesni-key-exp.c"
 #endif
 
 
@@ -105,7 +105,7 @@ QAESEncryption::QAESEncryption(Aes level, Mode mode,
     m_state = NULL;
 
 #ifdef USE_INTEL_AES_IF_AVAILABLE
-    m_aesNIAvailable = check_for_aes_instructions();
+    //m_aesNIAvailable = check_for_aes_instructions();
 #endif
 
     switch (level)
@@ -173,33 +173,38 @@ QByteArray QAESEncryption::expandKey(const QByteArray &key)
 {
 
 #ifdef USE_INTEL_AES_IF_AVAILABLE
-  if (m_aesNIAvailable){
+  if (true){
       switch(m_level) {
       case AES_128: {
           AES128 aes128;
-          char ret[aes128.expandedKey];
-          UCHAR uchar_key[key.size()];
+          quint8 ret[aes128.expandedKey];
+          memset(ret, 0x00, sizeof(ret));
+          quint8 uchar_key[key.size()];
           memcpy(uchar_key, key.data(), key.size());
-          iEncExpandKey128(uchar_key, (uchar*) ret);
-          return QByteArray(ret, aes128.expandedKey);
+          AES_128_Key_Expansion(uchar_key, ret);
+          return QByteArray((char*) ret, aes128.expandedKey);
       }
           break;
       case AES_192: {
           AES192 aes192;
-          char ret[aes192.expandedKey];
-          UCHAR uchar_key[key.size()];
+          quint8 ret[aes192.expandedKey];
+          memset(ret, 0x00, sizeof(ret));
+          quint8 uchar_key[key.size()];
           memcpy(uchar_key, key.data(), key.size());
-          iEncExpandKey192(uchar_key, (uchar*)ret);
-          return QByteArray(ret, aes192.expandedKey);
+
+          AES_192_Key_Expansion(uchar_key, ret);
+          return QByteArray((char*) ret, aes192.expandedKey);
       }
           break;
       case AES_256: {
           AES256 aes256;
-          char ret[aes256.expandedKey];
-          UCHAR uchar_key[key.size()];
+          quint8 ret[aes256.expandedKey];
+          memset(ret, 0x00, sizeof(ret));
+          quint8 uchar_key[key.size()];
           memcpy(uchar_key, key.data(), key.size());
-          iEncExpandKey256(uchar_key, (uchar*)ret);
-          return QByteArray(ret, aes256.expandedKey);
+
+          AES_256_Key_Expansion(uchar_key, ret);
+          return QByteArray((char*) ret, aes256.expandedKey);
       }
           break;
       default:
@@ -464,6 +469,15 @@ QByteArray QAESEncryption::invCipher(const QByteArray &expKey, const QByteArray 
     addRoundKey(0, expKey);
 
     return output;
+}
+
+QByteArray QAESEncryption::printArray(uchar* arr, int size)
+{
+    QByteArray print("");
+    for(int i=0; i<size; i++)
+        print.append(arr[i]);
+
+    return print.toHex();
 }
 
 QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv)

@@ -48,6 +48,7 @@ public:
     QByteArray removePadding(const QByteArray &rawText);
     QByteArray expandKey(const QByteArray &key);
 
+    QByteArray printArray(uchar *arr, int size);
 signals:
 
 public slots:
