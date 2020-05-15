@@ -8,6 +8,9 @@
 
 void AesTest::initTestCase()
 {
+#ifdef USE_INTEL_AES_IF_AVAILABLE
+    qDebug() << "AESNI Enabled";
+#endif
     quint8 key_16[16] =  {0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c};
     for (int i=0; i<16; i++)
         key16.append(key_16[i]);
@@ -55,7 +58,6 @@ void AesTest::initTestCase()
         outCBC128.append(output_cbc[i]);
     }
 
-    //intel_AES_enc128_CBC(in_text, out_text, key_16, 1, iv_16);
 }
 
 

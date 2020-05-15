@@ -30,7 +30,9 @@ HEADERS += \
 SOURCES += main.cpp \
     qaesencryption.cpp \
     unit_test/aestest.cpp \
-    aesni/aesni-key-exp.c
+    aesni/aesni-key-exp.c \
+    aesni/aesni-enc-ecb.c \
+    aesni/aesni-enc-cbc.c
 
 DISTFILES += \
     unit_test/longText.txt

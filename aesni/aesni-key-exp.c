@@ -3,6 +3,16 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define cpuid(func, ax, bx, cx, dx)\
+    __asm__ __volatile__("cpuid": "=a" (ax), "=b" (bx), "=c" (cx), "=d" (dx) : "a" (func));
+
+inline bool check_aesni_support()
+{
+    unsigned int a,b,c,d;
+    cpuid(1, a,b,c,d);
+    return (c & 0x2000000);
+}
 inline __m128i AES_128_ASSIST (__m128i temp1, __m128i temp2)
 {
     __m128i temp3;
@@ -75,7 +85,7 @@ inline void KEY_192_ASSIST(__m128i* temp1, __m128i * temp2, __m128i * temp3)
 
 void AES_192_Key_Expansion (const unsigned char *userkey, unsigned char *key)
 {
-    __m128i temp1, temp2, temp3, temp4;
+    __m128i temp1, temp2, temp3;
     __m128i *Key_Schedule = (__m128i*)key;
     temp1 = _mm_loadu_si128((__m128i*)userkey);
     temp3 = _mm_loadu_si128((__m128i*)(userkey+16));

@@ -4,11 +4,9 @@
 
 #ifdef USE_INTEL_AES_IF_AVAILABLE
 #include "aesni/aesni-key-exp.c"
+#include "aesni/aesni-enc-ecb.c"
+#include "aesni/aesni-enc-cbc.c"
 #endif
-
-
-#define cpuid(func, ax, bx, cx, dx)\
-    __asm__ __volatile__("cpuid": "=a" (ax), "=b" (bx), "=c" (cx), "=d" (dx) : "a" (func));
 
 /*
  * Static Functions
@@ -105,7 +103,7 @@ QAESEncryption::QAESEncryption(Aes level, Mode mode,
     m_state = NULL;
 
 #ifdef USE_INTEL_AES_IF_AVAILABLE
-    //m_aesNIAvailable = check_for_aes_instructions();
+    m_aesNIAvailable = check_aesni_support();
 #endif
 
     switch (level)
@@ -485,7 +483,6 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
     if (m_mode >= CBC && (iv.isNull() || iv.size() != m_blocklen))
        return QByteArray();
 
-    QByteArray ret;
     QByteArray expandedKey = expandKey(key);
     QByteArray alignedText(rawText);
 
@@ -494,40 +491,81 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
 
     switch(m_mode)
     {
-    case ECB:
+    case ECB: {
+#ifdef USE_INTEL_AES_IF_AVAILABLE
+        if (m_aesNIAvailable){
+            unsigned char in[alignedText.size()];
+            memcpy(in, alignedText.data(), alignedText.size());
+            unsigned char out[alignedText.size()];
+            memcpy(out, alignedText.data(), alignedText.size());
+            char expKey[expandedKey.size()];
+            memcpy(expKey, expandedKey.data(), expandedKey.size());
+            AES_ECB_encrypt(in, out, alignedText.size(),
+                            expKey, m_nr);
+            return QByteArray((char*)out, alignedText.size());
+        }
+#endif
+        QByteArray ret;
         for(int i=0; i < alignedText.size(); i+= m_blocklen)
             ret.append(cipher(expandedKey, alignedText.mid(i, m_blocklen)));
-        break;
+        return ret;
+    }
+    break;
     case CBC: {
-            QByteArray ivTemp(iv);
-            for(int i=0; i < alignedText.size(); i+= m_blocklen) {
-                alignedText.replace(i, m_blocklen, byteXor(alignedText.mid(i, m_blocklen),ivTemp));
-                ret.append(cipher(expandedKey, alignedText.mid(i, m_blocklen)));
-                ivTemp = ret.mid(i, m_blocklen);
-            }
+#ifdef USE_INTEL_AES_IF_AVAILABLE
+        if (m_aesNIAvailable){
+            quint8 in[alignedText.size()];
+            memcpy(in, alignedText.constData(), alignedText.size());
+            quint8 ivec[iv.size()];
+            memcpy(ivec, iv.data(), iv.size());
+            char out[alignedText.size()];
+            memset(out, 0x00, alignedText.size());
+            char expKey[expandedKey.size()];
+            memcpy(expKey, expandedKey.data(), expandedKey.size());
+            AES_CBC_encrypt(in,
+                            (unsigned char*) out,
+                            ivec,
+                            alignedText.size(),
+                            expKey,
+                            m_nr);
+            return QByteArray(out, alignedText.size());
         }
-        break;
+#endif
+        QByteArray ret;
+        QByteArray ivTemp(iv);
+        for(int i=0; i < alignedText.size(); i+= m_blocklen) {
+            alignedText.replace(i, m_blocklen, byteXor(alignedText.mid(i, m_blocklen),ivTemp));
+            ret.append(cipher(expandedKey, alignedText.mid(i, m_blocklen)));
+            ivTemp = ret.mid(i, m_blocklen);
+        }
+        return ret;
+    }
+    break;
     case CFB: {
-            ret.append(byteXor(alignedText.left(m_blocklen), cipher(expandedKey, iv)));
-            for(int i=0; i < alignedText.size(); i+= m_blocklen) {
-                if (i+m_blocklen < alignedText.size())
-                    ret.append(byteXor(alignedText.mid(i+m_blocklen, m_blocklen),
-                                       cipher(expandedKey, ret.mid(i, m_blocklen))));
-            }
+        QByteArray ret;
+        ret.append(byteXor(alignedText.left(m_blocklen), cipher(expandedKey, iv)));
+        for(int i=0; i < alignedText.size(); i+= m_blocklen) {
+            if (i+m_blocklen < alignedText.size())
+                ret.append(byteXor(alignedText.mid(i+m_blocklen, m_blocklen),
+                                   cipher(expandedKey, ret.mid(i, m_blocklen))));
         }
-        break;
+        return ret;
+    }
+    break;
     case OFB: {
-            QByteArray ofbTemp;
-            ofbTemp.append(cipher(expandedKey, iv));
-            for (int i=m_blocklen; i < alignedText.size(); i += m_blocklen){
-                ofbTemp.append(cipher(expandedKey, ofbTemp.right(m_blocklen)));
-            }
-            ret.append(byteXor(alignedText, ofbTemp));
+    QByteArray ret;
+        QByteArray ofbTemp;
+        ofbTemp.append(cipher(expandedKey, iv));
+        for (int i=m_blocklen; i < alignedText.size(); i += m_blocklen){
+            ofbTemp.append(cipher(expandedKey, ofbTemp.right(m_blocklen)));
         }
-        break;
+        ret.append(byteXor(alignedText, ofbTemp));
+        return ret;
+    }
+    break;
     default: break;
     }
-    return ret;
+    return QByteArray();
 }
 
 QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv)
