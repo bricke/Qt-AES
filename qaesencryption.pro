@@ -32,7 +32,8 @@ SOURCES += main.cpp \
     unit_test/aestest.cpp \
     aesni/aesni-key-exp.c \
     aesni/aesni-enc-ecb.c \
-    aesni/aesni-enc-cbc.c
+    aesni/aesni-enc-cbc.c \
+    aesni/aesni-enc-ctr.c
 
 DISTFILES += \
     unit_test/longText.txt
