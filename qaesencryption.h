@@ -4,6 +4,12 @@
 #include <QObject>
 #include <QByteArray>
 
+#ifdef __linux__
+#ifndef __LP64__
+#define do_rdtsc _do_rdtsc
+#endif
+#endif
+
 class QAESEncryption : public QObject
 {
     Q_OBJECT
@@ -42,6 +48,7 @@ public:
     QByteArray removePadding(const QByteArray &rawText);
     QByteArray expandKey(const QByteArray &key);
 
+    QByteArray printArray(uchar *arr, int size);
 signals:
 
 public slots:
@@ -56,6 +63,7 @@ private:
     int m_nr;
     int m_expandedKey;
     int m_padding;
+    bool m_aesNIAvailable;
     QByteArray* m_state;
 
     struct AES256{
