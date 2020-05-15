@@ -12,7 +12,8 @@ void AES_CBC_encrypt(const unsigned char *in,
                      int number_of_rounds)
 {
     __m128i feedback,data;
-    int i,j;
+    unsigned long i;
+    int j;
     if (length%16)
         length = length/16+1;
     else length /=16;
@@ -35,7 +36,8 @@ void AES_CBC_decrypt(const unsigned char *in,
                      int number_of_rounds)
 {
     __m128i data,feedback,last_in;
-    int i,j;
+    unsigned long i;
+    int j;
     if (length%16)
         length = length/16+1;
     else length /=16;

@@ -12,7 +12,8 @@ void AES_ECB_encrypt(const unsigned char *in,  //pointer to the PLAINTEXT
                      int number_of_rounds)     //number of AES rounds 10,12 or 14
 {
     __m128i tmp;
-    int i, j;
+    unsigned long i;
+    int j;
     if(length%16)
         length = length/16+1;
     else
@@ -35,7 +36,8 @@ void AES_ECB_decrypt(const unsigned char *in,  //pointer to the CIPHERTEXT
                      int number_of_rounds)     //number of AES rounds 10,12 or 14
 {
     __m128i tmp;
-    int i, j;
+    unsigned long i;
+    int j;
     if(length%16)
         length = length/16+1;
     else
