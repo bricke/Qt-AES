@@ -1,6 +1,7 @@
 # Qt-AES
 Small and portable AES encryption class for Qt.
-Supports all key sizes - 128/192/256 bits - ECB, CBC, CFB and OFB modes
+Native support for all key sizes - 128/192/256 bits - ECB, CBC, CFB and OFB modes
+AES-NI support for all key sizes - ECB, CBC modes
 
 ## Usage
 
@@ -107,6 +108,11 @@ QByteArray encrypted = QAESEncryption::Crypt(QAESEncryption::AES_256, QAESEncryp
 QString decodedString = QString(QAESEncryption::RemovePadding(decodeText));
 
 ```
+
+## AES New Instructions Set
+To use the hardware acceleration provided by the AES New Instructions Set, define USE_INTEL_AES_IF_AVAILABLE
+If the CPU supports it, the code will switch to use AESNI automatically.
+The feature is enabled by default
 
 ## Unit Testing
 The unit testing vectors used are included in [NIST-Recommendation for Block Cipher Modes of Operation](http://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38a.pdf)
