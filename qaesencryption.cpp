@@ -98,10 +98,8 @@ inline quint8 multiply(quint8 x, quint8 y){
 QAESEncryption::QAESEncryption(Aes level, Mode mode,
                                Padding padding)
     : m_nb(4), m_blocklen(16), m_level(level), m_mode(mode), m_padding(padding)
-    , m_aesNIAvailable(false)
+    , m_aesNIAvailable(false), m_state(nullptr)
 {
-    m_state = NULL;
-
 #ifdef USE_INTEL_AES_IF_AVAILABLE
     m_aesNIAvailable = check_aesni_support();
 #endif
@@ -480,7 +478,7 @@ QByteArray QAESEncryption::printArray(uchar* arr, int size)
 
 QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv)
 {
-    if (m_mode >= CBC && (iv.isNull() || iv.size() != m_blocklen))
+    if (m_mode >= CBC && (iv.isEmpty() || iv.size() != m_blocklen))
        return QByteArray();
 
     QByteArray expandedKey = expandKey(key);
@@ -570,7 +568,7 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
 
 QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv)
 {
-    if (m_mode >= CBC && (iv.isNull() || iv.size() != m_blocklen))
+    if (m_mode >= CBC && (iv.isEmpty() || iv.size() != m_blocklen))
        return QByteArray();
 
     QByteArray ret;
