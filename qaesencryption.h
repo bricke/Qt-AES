@@ -90,7 +90,7 @@ private:
     quint8 getSBoxValue(quint8 num){return sbox[num];}
     quint8 getSBoxInvert(quint8 num){return rsbox[num];}
 
-    void addRoundKey(const quint8 round, const QByteArray expKey);
+    void addRoundKey(const quint8 round, const QByteArray &expKey);
     void subBytes();
     void shiftRows();
     void mixColumns();

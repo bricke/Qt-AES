@@ -266,7 +266,7 @@ QByteArray QAESEncryption::expandKey(const QByteArray &key)
 
 // This function adds the round key to state.
 // The round key is added to the state by an XOR function.
-void QAESEncryption::addRoundKey(const quint8 round, const QByteArray expKey)
+void QAESEncryption::addRoundKey(const quint8 round, const QByteArray &expKey)
 {
   QByteArray::iterator it = m_state->begin();
   for(int i=0; i < 16; ++i)
