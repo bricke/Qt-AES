@@ -38,7 +38,7 @@ public:
     static QByteArray Decrypt(QAESEncryption::Aes level, QAESEncryption::Mode mode, const QByteArray &rawText, const QByteArray &key,
                               const QByteArray &iv = QByteArray(), QAESEncryption::Padding padding = QAESEncryption::ISO);
     static QByteArray ExpandKey(QAESEncryption::Aes level, QAESEncryption::Mode mode, const QByteArray &key);
-    static QByteArray RemovePadding(const QByteArray &rawText, QAESEncryption::Padding padding);
+    static QByteArray RemovePadding(const QByteArray &rawText, QAESEncryption::Padding padding = QAESEncryption::ISO);
 
     QAESEncryption(QAESEncryption::Aes level, QAESEncryption::Mode mode,
                    QAESEncryption::Padding padding = QAESEncryption::ISO);
