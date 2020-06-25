@@ -3,9 +3,9 @@
 #include <QVector>
 
 #ifdef USE_INTEL_AES_IF_AVAILABLE
-#include "aesni/aesni-key-exp.c"
-#include "aesni/aesni-enc-ecb.c"
-#include "aesni/aesni-enc-cbc.c"
+#include "aesni/aesni-key-exp.h"
+#include "aesni/aesni-enc-ecb.h"
+#include "aesni/aesni-enc-cbc.h"
 #endif
 
 /*
@@ -78,22 +78,27 @@ QByteArray QAESEncryption::RemovePadding(const QByteArray &rawText, QAESEncrypti
  * */
 
 /*
- * Inline Functions
+ * Local Functions
  * */
 
-inline quint8 xTime(quint8 x){
-  return ((x<<1) ^ (((x>>7) & 1) * 0x1b));
+namespace {
+
+quint8 xTime(quint8 x)
+{
+    return ((x<<1) ^ (((x>>7) & 1) * 0x1b));
 }
 
-inline quint8 multiply(quint8 x, quint8 y){
-  return (((y & 1) * x) ^ ((y>>1 & 1) * xTime(x)) ^ ((y>>2 & 1) * xTime(xTime(x))) ^ ((y>>3 & 1)
+quint8 multiply(quint8 x, quint8 y)
+{
+    return (((y & 1) * x) ^ ((y>>1 & 1) * xTime(x)) ^ ((y>>2 & 1) * xTime(xTime(x))) ^ ((y>>3 & 1)
             * xTime(xTime(xTime(x)))) ^ ((y>>4 & 1) * xTime(xTime(xTime(xTime(x))))));
 }
 
-/*
- * End Inline functions
- * */
+}
 
+/*
+ * End Local functions
+ * */
 
 QAESEncryption::QAESEncryption(Aes level, Mode mode,
                                Padding padding)
