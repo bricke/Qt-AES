@@ -61,7 +61,7 @@ QByteArray QAESEncryption::RemovePadding(const QByteArray &rawText, QAESEncrypti
         }
 
         // And check if it's the byte for marking padding
-        if (ret.at(marker_index) == static_cast<char>(0x80))
+        if (ret.at(marker_index) == '\x80')
         {
             ret.truncate(marker_index);
         }
@@ -161,7 +161,7 @@ QByteArray QAESEncryption::getPadding(int currSize, int alignment)
         break;
     case Padding::ISO:
         if (size > 0)
-            return QByteArray (size - 1, 0x00).prepend(0x80);
+            return QByteArray (size - 1, 0x00).prepend('\x80');
         break;
     default:
         return QByteArray(size, 0x00);
