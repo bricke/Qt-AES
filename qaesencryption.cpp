@@ -3,9 +3,9 @@
 #include <QVector>
 
 #ifdef USE_INTEL_AES_IF_AVAILABLE
-#include "aesni/aesni-key-exp.c"
-#include "aesni/aesni-enc-ecb.c"
-#include "aesni/aesni-enc-cbc.c"
+#include "aesni/aesni-key-exp.h"
+#include "aesni/aesni-enc-ecb.h"
+#include "aesni/aesni-enc-cbc.h"
 #endif
 
 /*
@@ -61,7 +61,7 @@ QByteArray QAESEncryption::RemovePadding(const QByteArray &rawText, QAESEncrypti
         }
 
         // And check if it's the byte for marking padding
-        if (ret.at(marker_index) == static_cast<char>(0x80))
+        if (ret.at(marker_index) == '\x80')
         {
             ret.truncate(marker_index);
         }
@@ -78,30 +78,33 @@ QByteArray QAESEncryption::RemovePadding(const QByteArray &rawText, QAESEncrypti
  * */
 
 /*
- * Inline Functions
+ * Local Functions
  * */
 
-inline quint8 xTime(quint8 x){
-  return ((x<<1) ^ (((x>>7) & 1) * 0x1b));
+namespace {
+
+quint8 xTime(quint8 x)
+{
+    return ((x<<1) ^ (((x>>7) & 1) * 0x1b));
 }
 
-inline quint8 multiply(quint8 x, quint8 y){
-  return (((y & 1) * x) ^ ((y>>1 & 1) * xTime(x)) ^ ((y>>2 & 1) * xTime(xTime(x))) ^ ((y>>3 & 1)
+quint8 multiply(quint8 x, quint8 y)
+{
+    return (((y & 1) * x) ^ ((y>>1 & 1) * xTime(x)) ^ ((y>>2 & 1) * xTime(xTime(x))) ^ ((y>>3 & 1)
             * xTime(xTime(xTime(x)))) ^ ((y>>4 & 1) * xTime(xTime(xTime(xTime(x))))));
 }
 
-/*
- * End Inline functions
- * */
+}
 
+/*
+ * End Local functions
+ * */
 
 QAESEncryption::QAESEncryption(Aes level, Mode mode,
                                Padding padding)
     : m_nb(4), m_blocklen(16), m_level(level), m_mode(mode), m_padding(padding)
-    , m_aesNIAvailable(false)
+    , m_aesNIAvailable(false), m_state(nullptr)
 {
-    m_state = NULL;
-
 #ifdef USE_INTEL_AES_IF_AVAILABLE
     m_aesNIAvailable = check_aesni_support();
 #endif
@@ -158,7 +161,7 @@ QByteArray QAESEncryption::getPadding(int currSize, int alignment)
         break;
     case Padding::ISO:
         if (size > 0)
-            return QByteArray (size - 1, 0x00).prepend(0x80);
+            return QByteArray (size - 1, 0x00).prepend('\x80');
         break;
     default:
         return QByteArray(size, 0x00);
@@ -266,7 +269,7 @@ QByteArray QAESEncryption::expandKey(const QByteArray &key)
 
 // This function adds the round key to state.
 // The round key is added to the state by an XOR function.
-void QAESEncryption::addRoundKey(const quint8 round, const QByteArray expKey)
+void QAESEncryption::addRoundKey(const quint8 round, const QByteArray &expKey)
 {
   QByteArray::iterator it = m_state->begin();
   for(int i=0; i < 16; ++i)
@@ -480,7 +483,7 @@ QByteArray QAESEncryption::printArray(uchar* arr, int size)
 
 QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv)
 {
-    if (m_mode >= CBC && (iv.isNull() || iv.size() != m_blocklen))
+    if (m_mode >= CBC && (iv.isEmpty() || iv.size() != m_blocklen))
        return QByteArray();
 
     QByteArray expandedKey = expandKey(key);
@@ -570,7 +573,7 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
 
 QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv)
 {
-    if (m_mode >= CBC && (iv.isNull() || iv.size() != m_blocklen))
+    if (m_mode >= CBC && (iv.isEmpty() || iv.size() != m_blocklen))
        return QByteArray();
 
     QByteArray ret;

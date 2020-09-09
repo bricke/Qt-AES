@@ -25,18 +25,17 @@ QMAKE_CXXFLAGS += -maes
 
 HEADERS += \
     qaesencryption.h \
-    unit_test/aestest.h \
+    aesni/aesni-key-exp.h \
+    aesni/aesni-enc-ecb.h \
+    aesni/aesni-enc-cbc.h \
+    unit_test/aestest.h
 
 SOURCES += main.cpp \
     qaesencryption.cpp \
-    unit_test/aestest.cpp \
-    aesni/aesni-key-exp.c \
-    aesni/aesni-enc-ecb.c \
-    aesni/aesni-enc-cbc.c
+    unit_test/aestest.cpp
 
 DISTFILES += \
     unit_test/longText.txt
 
 RESOURCES += \
     res.qrc
-

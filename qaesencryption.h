@@ -34,17 +34,17 @@ public:
     };
 
     static QByteArray Crypt(QAESEncryption::Aes level, QAESEncryption::Mode mode, const QByteArray &rawText, const QByteArray &key,
-                            const QByteArray &iv = NULL, QAESEncryption::Padding padding = QAESEncryption::ISO);
+                            const QByteArray &iv = QByteArray(), QAESEncryption::Padding padding = QAESEncryption::ISO);
     static QByteArray Decrypt(QAESEncryption::Aes level, QAESEncryption::Mode mode, const QByteArray &rawText, const QByteArray &key,
-                              const QByteArray &iv = NULL, QAESEncryption::Padding padding = QAESEncryption::ISO);
+                              const QByteArray &iv = QByteArray(), QAESEncryption::Padding padding = QAESEncryption::ISO);
     static QByteArray ExpandKey(QAESEncryption::Aes level, QAESEncryption::Mode mode, const QByteArray &key);
-    static QByteArray RemovePadding(const QByteArray &rawText, QAESEncryption::Padding padding);
+    static QByteArray RemovePadding(const QByteArray &rawText, QAESEncryption::Padding padding = QAESEncryption::ISO);
 
     QAESEncryption(QAESEncryption::Aes level, QAESEncryption::Mode mode,
                    QAESEncryption::Padding padding = QAESEncryption::ISO);
 
-    QByteArray encode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv = NULL);
-    QByteArray decode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv = NULL);
+    QByteArray encode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv = QByteArray());
+    QByteArray decode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv = QByteArray());
     QByteArray removePadding(const QByteArray &rawText);
     QByteArray expandKey(const QByteArray &key);
 
@@ -90,7 +90,7 @@ private:
     quint8 getSBoxValue(quint8 num){return sbox[num];}
     quint8 getSBoxInvert(quint8 num){return rsbox[num];}
 
-    void addRoundKey(const quint8 round, const QByteArray expKey);
+    void addRoundKey(const quint8 round, const QByteArray &expKey);
     void subBytes();
     void shiftRows();
     void mixColumns();
@@ -98,9 +98,9 @@ private:
     void invSubBytes();
     void invShiftRows();
     QByteArray getPadding(int currSize, int alignment);
-    QByteArray cipher(const QByteArray &expKey, const QByteArray &plainText);
-    QByteArray invCipher(const QByteArray &expKey, const QByteArray &plainText);
-    QByteArray byteXor(const QByteArray &in, const QByteArray &iv);
+    QByteArray cipher(const QByteArray &expKey, const QByteArray &in);
+    QByteArray invCipher(const QByteArray &expKey, const QByteArray &in);
+    QByteArray byteXor(const QByteArray &a, const QByteArray &b);
 
     const quint8 sbox[256] = {
       //0     1    2      3     4    5     6     7      8    9     A      B    C     D     E     F
