@@ -10,12 +10,12 @@ AES-NI support for all key sizes - ECB, CBC modes
 // Encode of rawText with key
 // iv is used in CBC mode
 // return the encrypted byte array
-QByteArray encode(const QByteArray rawText, const QByteArray key, const QByteArray iv = NULL);
+QByteArray encode(const QByteArray rawText, const QByteArray key, const QByteArray iv = QByteArray());
 
 // Decode of rawText with key
 // iv is used in CBC mode
 // return the decrypted byte array
-QByteArray decode(const QByteArray rawText, const QByteArray key, const QByteArray iv = NULL);
+QByteArray decode(const QByteArray rawText, const QByteArray key, const QByteArray iv = QByteArray());
 
 // Key expansion in Rijndael schedule
 // return the new expanded key as byte array
