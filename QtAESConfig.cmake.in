@@ -1,0 +1,5 @@
+include(CMakeFindDependencyMacro)
+
+find_dependency(@QT_PACKAGE_NAME@ @QTAES_QT_VERSION@ COMPONENTS Core)
+
+include("${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@Targets.cmake")
