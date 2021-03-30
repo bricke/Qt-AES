@@ -1,6 +1,8 @@
 #ifndef QAESENCRYPTION_H
 #define QAESENCRYPTION_H
 
+#include "qtaes_export.h"
+
 #include <QObject>
 #include <QByteArray>
 
@@ -10,7 +12,7 @@
 #endif
 #endif
 
-class QAESEncryption : public QObject
+class QTAESSHARED_EXPORT QAESEncryption : public QObject
 {
     Q_OBJECT
 public:
