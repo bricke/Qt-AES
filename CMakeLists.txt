@@ -57,6 +57,7 @@ add_library(QtAES)
 
 if(NOT QTAES_STANDALONE_BUILD)
     add_library(${PROJECT_NAME}::QtAES ALIAS QtAES)
+    generate_export_header(QtAES EXPORT_MACRO_NAME QTAESSHARED_EXPORT)
 endif()
 
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/QAESEncryption" "#include \"qaesencryption.h\"")
