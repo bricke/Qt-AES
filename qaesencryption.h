@@ -55,9 +55,9 @@ public:
     QByteArray expandKey(const QByteArray &key);
 
     QByteArray printArray(uchar *arr, int size);
-signals:
+Q_SIGNALS:
 
-public slots:
+public Q_SLOTS:
 
 private:
     int m_nb;
