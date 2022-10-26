@@ -414,6 +414,23 @@ QByteArray QAESEncryption::byteXor(const QByteArray &a, const QByteArray &b)
   return ret;
 }
 
+// Treats this as a (this->length()) bytes number to increment it.
+QByteArray QAESEncryption::incrBytes(const QByteArray &bytes, const quint8 &inc, const quint64 &count){
+    QByteArray ret = bytes;
+    for(quint64 i = 0; i< count; i++){
+        unsigned char *lsb = (unsigned char *)(ret.data() + (ret.length()-1));
+        quint8 inc_ = inc;
+        for(quint8 diff = 0xFF - *lsb; inc_ > 0; lsb--, diff = 0xFF - *lsb){
+            if(inc_ <= diff){
+                *lsb += inc_, inc_ = 0;
+            }else{
+                inc_ -= diff, *lsb = 0;
+            }
+        }
+    }
+    return ret;
+}
+
 // Cipher is the main function that encrypts the PlainText.
 QByteArray QAESEncryption::cipher(const QByteArray &expKey, const QByteArray &in)
 {
@@ -481,11 +498,10 @@ QByteArray QAESEncryption::printArray(uchar* arr, int size)
     return print.toHex();
 }
 
-QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv)
+QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv1, const QByteArray &iv2, const quint8 &counterInc)
 {
-    if (m_mode >= CBC && (iv.isEmpty() || iv.size() != m_blocklen))
+    if (m_mode >= CBC && (iv1.isEmpty() || iv1.size() != m_blocklen))
        return QByteArray();
-
     QByteArray expandedKey = expandKey(key);
     QByteArray alignedText(rawText);
 
@@ -519,8 +535,8 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
         if (m_aesNIAvailable){
             quint8 in[alignedText.size()];
             memcpy(in, alignedText.constData(), alignedText.size());
-            quint8 ivec[iv.size()];
-            memcpy(ivec, iv.data(), iv.size());
+            quint8 ivec[iv1.size()];
+            memcpy(ivec, iv1.data(), iv1.size());
             char out[alignedText.size()];
             memset(out, 0x00, alignedText.size());
             char expKey[expandedKey.size()];
@@ -535,7 +551,7 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
         }
 #endif
         QByteArray ret;
-        QByteArray ivTemp(iv);
+        QByteArray ivTemp(iv1);
         for(int i=0; i < alignedText.size(); i+= m_blocklen) {
             alignedText.replace(i, m_blocklen, byteXor(alignedText.mid(i, m_blocklen),ivTemp));
             ret.append(cipher(expandedKey, alignedText.mid(i, m_blocklen)));
@@ -544,9 +560,35 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
         return ret;
     }
     break;
+    case PCBC: {
+        QByteArray ret; //ENCODE
+        QByteArray ivTemp(iv1);
+        for(int i=0; i < alignedText.size(); i+= m_blocklen) {
+            QByteArray alignedBlock = alignedText.mid(i, m_blocklen);
+            alignedText.replace(i, m_blocklen, byteXor(alignedBlock,ivTemp));
+            ret.append(cipher(expandedKey, alignedText.mid(i, m_blocklen)));
+            ivTemp = byteXor(ret.mid(i, m_blocklen), alignedBlock);
+        }
+        return ret;
+    }
+    break;
+    case CPCBC: {
+        QByteArray ret;
+        QByteArray iv1Temp(iv1);
+        QByteArray iv2Temp(iv2);
+        for(int i=0; i < alignedText.size(); i+= m_blocklen) {
+            iv2Temp = incrBytes(iv2Temp, counterInc);
+            QByteArray alignedBlock = alignedText.mid(i, m_blocklen);
+            alignedText.replace(i, m_blocklen, byteXor(alignedBlock,iv1Temp));
+            ret.append(byteXor(cipher(expandedKey, alignedText.mid(i, m_blocklen)), iv2Temp));
+            iv1Temp = byteXor(ret.mid(i, m_blocklen), alignedBlock);
+        }
+        return ret;
+    }
+    break;
     case CFB: {
         QByteArray ret;
-        ret.append(byteXor(alignedText.left(m_blocklen), cipher(expandedKey, iv)));
+        ret.append(byteXor(alignedText.left(m_blocklen), cipher(expandedKey, iv1)));
         for(int i=0; i < alignedText.size(); i+= m_blocklen) {
             if (i+m_blocklen < alignedText.size())
                 ret.append(byteXor(alignedText.mid(i+m_blocklen, m_blocklen),
@@ -558,7 +600,7 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
     case OFB: {
     QByteArray ret;
         QByteArray ofbTemp;
-        ofbTemp.append(cipher(expandedKey, iv));
+        ofbTemp.append(cipher(expandedKey, iv1));
         for (int i=m_blocklen; i < alignedText.size(); i += m_blocklen){
             ofbTemp.append(cipher(expandedKey, ofbTemp.right(m_blocklen)));
         }
@@ -571,9 +613,9 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
     return QByteArray();
 }
 
-QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv)
+QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv1, const QByteArray &iv2, const quint8 &counterInc)
 {
-    if (m_mode >= CBC && (iv.isEmpty() || iv.size() != m_blocklen))
+    if (m_mode >= CBC && (iv1.isEmpty() || iv1.size() != m_blocklen))
        return QByteArray();
 
     QByteArray ret;
@@ -586,7 +628,7 @@ QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &k
             ret.append(invCipher(expandedKey, rawText.mid(i, m_blocklen)));
         break;
     case CBC: {
-            QByteArray ivTemp(iv);
+            QByteArray ivTemp(iv1);
             for(int i=0; i < rawText.size(); i+= m_blocklen){
                 ret.append(invCipher(expandedKey, rawText.mid(i, m_blocklen)));
                 ret.replace(i, m_blocklen, byteXor(ret.mid(i, m_blocklen),ivTemp));
@@ -594,8 +636,30 @@ QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &k
             }
         }
         break;
+    case PCBC: {
+            QByteArray ivTemp(iv1);
+            for(int i=0; i < rawText.size(); i+= m_blocklen){
+                QByteArray rawBlock = rawText.mid(i, m_blocklen);
+                ret.append(invCipher(expandedKey, rawBlock));
+                ret.replace(i, m_blocklen, byteXor(ret.mid(i, m_blocklen),ivTemp));
+                ivTemp = byteXor(ret.mid(i, m_blocklen), rawBlock);
+            }
+        }
+        break;
+    case CPCBC: {
+            QByteArray iv1Temp(iv1); //DECODE
+            QByteArray iv2Temp(iv2);
+            for(int i=0; i < rawText.size(); i+= m_blocklen){
+                iv2Temp = incrBytes(iv2Temp, counterInc);
+                QByteArray rawBlock = rawText.mid(i, m_blocklen);
+                ret.append(invCipher(expandedKey, byteXor(rawBlock, iv2Temp))); //
+                ret.replace(i, m_blocklen, byteXor(ret.mid(i, m_blocklen),iv1Temp));
+                iv1Temp = byteXor(ret.mid(i, m_blocklen), rawBlock);
+            }
+        }
+        break;
     case CFB: {
-            ret.append(byteXor(rawText.mid(0, m_blocklen), cipher(expandedKey, iv)));
+            ret.append(byteXor(rawText.mid(0, m_blocklen), cipher(expandedKey, iv1)));
             for(int i=0; i < rawText.size(); i+= m_blocklen){
                 if (i+m_blocklen < rawText.size()) {
                     ret.append(byteXor(rawText.mid(i+m_blocklen, m_blocklen),
@@ -606,7 +670,7 @@ QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &k
         break;
     case OFB: {
         QByteArray ofbTemp;
-        ofbTemp.append(cipher(expandedKey, iv));
+        ofbTemp.append(cipher(expandedKey, iv1));
         for (int i=m_blocklen; i < rawText.size(); i += m_blocklen){
             ofbTemp.append(cipher(expandedKey, ofbTemp.right(m_blocklen)));
         }

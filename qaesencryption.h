@@ -29,6 +29,8 @@ public:
     enum Mode {
         ECB,
         CBC,
+        PCBC,
+        CPCBC,
         CFB,
         OFB
     };
@@ -49,8 +51,8 @@ public:
     QAESEncryption(QAESEncryption::Aes level, QAESEncryption::Mode mode,
                    QAESEncryption::Padding padding = QAESEncryption::ISO);
 
-    QByteArray encode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv = QByteArray());
-    QByteArray decode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv = QByteArray());
+    QByteArray encode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv1 = QByteArray(), const QByteArray &iv2 = QByteArray(), const quint8 &counterInc = 64);
+    QByteArray decode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv1 = QByteArray(), const QByteArray &iv2 = QByteArray(), const quint8 &counterInc = 64);
     QByteArray removePadding(const QByteArray &rawText);
     QByteArray expandKey(const QByteArray &key);
 
@@ -107,6 +109,7 @@ private:
     QByteArray cipher(const QByteArray &expKey, const QByteArray &in);
     QByteArray invCipher(const QByteArray &expKey, const QByteArray &in);
     QByteArray byteXor(const QByteArray &a, const QByteArray &b);
+    QByteArray incrBytes(const QByteArray &bytes, const quint8 &inc = 8, const quint64 &count = 1);
 
     const quint8 sbox[256] = {
       //0     1    2      3     4    5     6     7      8    9     A      B    C     D     E     F
