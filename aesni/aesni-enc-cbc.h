@@ -1,6 +1,9 @@
 #ifndef AESNIENCCBC_H
 #define AESNIENCCBC_H
 
+#include <QDebug>
+#include <chrono>
+#include <iostream>
 #include <wmmintrin.h>
 
 namespace {
@@ -15,9 +18,11 @@ void AES_CBC_encrypt(const unsigned char *in,
     __m128i feedback,data;
     unsigned long i;
     int j;
+
     if (length%16)
         length = length/16+1;
     else length /=16;
+
     feedback=_mm_loadu_si128 ((__m128i*)ivec);
     for(i=0; i < length; i++) {
         data = _mm_loadu_si128 (&((__m128i*)in)[i]);
@@ -25,11 +30,12 @@ void AES_CBC_encrypt(const unsigned char *in,
         feedback = _mm_xor_si128 (feedback,((__m128i*)key)[0]);
         for(j=1; j <number_of_rounds; j++)
             feedback = _mm_aesenc_si128 (feedback,((__m128i*)key)[j]);
-        feedback = _mm_aesenclast_si128 (feedback,((__m128i*)key)[j]); _mm_storeu_si128 (&((__m128i*)out)[i],feedback);
+        feedback = _mm_aesenclast_si128 (feedback,((__m128i*)key)[j]);
+        _mm_storeu_si128 (&((__m128i*)out)[i],feedback);
     }
 }
 
-#if 0
+#if 1
 void AES_CBC_decrypt(const unsigned char *in,
                      unsigned char *out,
                      unsigned char ivec[16],
@@ -56,6 +62,7 @@ void AES_CBC_decrypt(const unsigned char *in,
         feedback=last_in;
     }
 }
+
 #endif
 
 }
