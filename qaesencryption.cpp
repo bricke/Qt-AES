@@ -175,45 +175,61 @@ QByteArray QAESEncryption::expandKey(const QByteArray &key, bool isEncryptionKey
 {
 
 #ifdef USE_INTEL_AES_IF_AVAILABLE
-  if (true){
-      switch(m_level) {
-      case AES_128: {
-          AES128 aes128;
-          quint8 ret[aes128.expandedKey];
-          memset(ret, 0x00, sizeof(ret));
-          quint8 uchar_key[key.size()];
-          memcpy(uchar_key, key.data(), key.size());
-          AES_128_Key_Expansion(uchar_key, ret);
-          return QByteArray((char*) ret, aes128.expandedKey);
-      }
-          break;
-      case AES_192: {
-          AES192 aes192;
-          quint8 ret[aes192.expandedKey];
-          memset(ret, 0x00, sizeof(ret));
-          quint8 uchar_key[key.size()];
-          memcpy(uchar_key, key.data(), key.size());
+    if (true){        //should be check_aesni_support() here, but somehow this method doesn't wanna get called :shrug:
+          switch(m_level) {
+          case AES_128: {
+              AES128 aes128;
+              AES_KEY aesKey;
+              if(isEncryptionKey){
+                  AES_set_encrypt_key((unsigned char*) key.constData(), aes128.userKeySize, &aesKey);
+              }else{
+                  AES_set_decrypt_key((unsigned char*) key.constData(), aes128.userKeySize, &aesKey);
+              }
 
-          AES_192_Key_Expansion(uchar_key, ret);
-          return QByteArray((char*) ret, aes192.expandedKey);
-      }
-          break;
-      case AES_256: {
-          AES256 aes256;
-          quint8 ret[aes256.expandedKey];
-          memset(ret, 0x00, sizeof(ret));
-          quint8 uchar_key[key.size()];
-          memcpy(uchar_key, key.data(), key.size());
+              QByteArray expKey;
+              expKey.resize(aes128.expandedKey);
+              memcpy(expKey.data(), (char*) aesKey.KEY, aes128.expandedKey);
+              memset(aesKey.KEY, 0, 240);
+              return expKey;
+          }
+              break;
+          case AES_192: {
+              AES192 aes192;
+              AES_KEY aesKey;
+              if(isEncryptionKey){
+                  AES_set_encrypt_key((unsigned char*) key.constData(), aes192.userKeySize, &aesKey);
+              }else{
+                  AES_set_decrypt_key((unsigned char*) key.constData(), aes192.userKeySize, &aesKey);
+              }
 
-          AES_256_Key_Expansion(uchar_key, ret);
-          return QByteArray((char*) ret, aes256.expandedKey);
-      }
-          break;
-      default:
-          return QByteArray();
-          break;
-      }
-  } else
+              QByteArray expKey;
+              expKey.resize(aes192.expandedKey);
+              memcpy(expKey.data(), (char*) aesKey.KEY, aes192.expandedKey);
+              memset(aesKey.KEY, 0, 240);
+              return expKey;
+          }
+              break;
+          case AES_256: {
+              AES256 aes256;
+              AES_KEY aesKey;
+              if(isEncryptionKey){
+                  AES_set_encrypt_key((unsigned char*) key.constData(), aes256.userKeySize, &aesKey);
+              }else{
+                  AES_set_decrypt_key((unsigned char*) key.constData(), aes256.userKeySize, &aesKey);
+              }
+
+              QByteArray expKey;
+              expKey.resize(aes256.expandedKey);
+              memcpy(expKey.data(), (char*) aesKey.KEY, aes256.expandedKey);
+              memset(aesKey.KEY, 0, 240);
+              return expKey;
+          }
+              break;
+          default:
+              return QByteArray();
+              break;
+          }
+      } else
 #endif
   {
 
@@ -484,29 +500,31 @@ QByteArray QAESEncryption::printArray(uchar* arr, int size)
 
 QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv)
 {
-    if (m_mode >= CBC && (iv.isEmpty() || iv.size() != m_blocklen))
-       return QByteArray();
+    if ((m_mode >= CBC && (iv.isEmpty() || iv.size() != m_blocklen)) || key.size() != m_keyLen)
+           return QByteArray();
 
-    QByteArray expandedKey = expandKey(key, true);
-    QByteArray alignedText(rawText);
+        QByteArray expandedKey = expandKey(key, true);
+        QByteArray alignedText(rawText);
 
-    //Fill array with padding
-    alignedText.append(getPadding(rawText.size(), m_blocklen));
+        //Fill array with padding
+        alignedText.append(getPadding(rawText.size(), m_blocklen));
 
     switch(m_mode)
     {
     case ECB: {
 #ifdef USE_INTEL_AES_IF_AVAILABLE
         if (m_aesNIAvailable){
-            unsigned char in[alignedText.size()];
-            memcpy(in, alignedText.data(), alignedText.size());
-            unsigned char out[alignedText.size()];
-            memcpy(out, alignedText.data(), alignedText.size());
             char expKey[expandedKey.size()];
             memcpy(expKey, expandedKey.data(), expandedKey.size());
-            AES_ECB_encrypt(in, out, alignedText.size(),
-                            expKey, m_nr);
-            return QByteArray((char*)out, alignedText.size());
+
+            QByteArray outText;
+            outText.resize(alignedText.size());
+            AES_ECB_encrypt((unsigned char*) alignedText.constData(),
+                            (unsigned char*) outText.data(),
+                            alignedText.size(),
+                            expKey,
+                            m_nr);
+            return outText;
         }
 #endif
         QByteArray ret;
@@ -518,21 +536,20 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
     case CBC: {
 #ifdef USE_INTEL_AES_IF_AVAILABLE
         if (m_aesNIAvailable){
-            quint8 in[alignedText.size()];
-            memcpy(in, alignedText.constData(), alignedText.size());
             quint8 ivec[iv.size()];
             memcpy(ivec, iv.data(), iv.size());
-            char out[alignedText.size()];
-            memset(out, 0x00, alignedText.size());
             char expKey[expandedKey.size()];
             memcpy(expKey, expandedKey.data(), expandedKey.size());
-            AES_CBC_encrypt(in,
-                            (unsigned char*) out,
+
+            QByteArray outText;
+            outText.resize(alignedText.size());
+            AES_CBC_encrypt((unsigned char*) alignedText.constData(),
+                            (unsigned char*) outText.data(),
                             ivec,
                             alignedText.size(),
                             expKey,
                             m_nr);
-            return QByteArray(out, alignedText.size());
+            return outText;
         }
 #endif
         QByteArray ret;
@@ -574,19 +591,65 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
 
 QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv)
 {
-    if (m_mode >= CBC && (iv.isEmpty() || iv.size() != m_blocklen))
-       return QByteArray();
+    if ((m_mode >= CBC && (iv.isEmpty() || iv.size() != m_blocklen)) || key.size() != m_keyLen)
+           return QByteArray();
 
-    QByteArray ret;
-    QByteArray expandedKey = expandKey(key, true);
+        QByteArray ret;
+        QByteArray expandedKey;
+
+    #ifdef USE_INTEL_AES_IF_AVAILABLE
+        if(m_aesNIAvailable && m_mode <= CBC){
+            expandedKey = expandKey(key, false);
+        }else{
+            expandedKey = expandKey(key, true);
+        }
+    #else
+        expandedKey = expandKey(key, expandedKey, true);
+    #endif
+        //false or true here is very important
+        //the expandedKeys aren't the same for !aes-ni! ENcryption and DEcryption (only CBC and EBC)
+        //but if you are !NOT! using aes-ni then the expandedKeys for encryption and decryption are the SAME!!!
+
 
     switch(m_mode)
     {
     case ECB:
+#ifdef USE_INTEL_AES_IF_AVAILABLE
+        if (m_aesNIAvailable){
+            char expKey[expandedKey.size()];                                //expandedKey
+            memcpy(expKey, expandedKey.data(), expandedKey.size());
+            ret.resize(rawText.size());
+
+            AES_ECB_decrypt((unsigned char*) rawText.constData(),
+                            (unsigned char*) ret.data(),
+                            rawText.size(),
+                            expKey,
+                            m_nr);
+            break;
+        }
+#endif
         for(int i=0; i < rawText.size(); i+= m_blocklen)
             ret.append(invCipher(expandedKey, rawText.mid(i, m_blocklen)));
         break;
-    case CBC: {
+    case CBC:
+#ifdef USE_INTEL_AES_IF_AVAILABLE
+        if (m_aesNIAvailable){
+            quint8 ivec[iv.size()];                                         //IV
+            memcpy(ivec, iv.constData(), iv.size());
+            char expKey[expandedKey.size()];                                //expandedKey
+            memcpy(expKey, expandedKey.data(), expandedKey.size());
+            ret.resize(rawText.size());
+
+            AES_CBC_decrypt((unsigned char*) rawText.constData(),
+                            (unsigned char*) ret.data(),
+                            ivec,
+                            rawText.size(),
+                            expKey,
+                            m_nr);
+            break;
+        }
+#endif
+        {
             QByteArray ivTemp(iv);
             for(int i=0; i < rawText.size(); i+= m_blocklen){
                 ret.append(invCipher(expandedKey, rawText.mid(i, m_blocklen)));

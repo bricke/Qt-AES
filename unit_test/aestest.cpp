@@ -194,7 +194,7 @@ void AesTest::OFB256String()
                         "National Institute of Standards and Technology (NIST) in 2001");
     QString key("123456789123");
 
-    QByteArray hashKey = QCryptographicHash::hash(key.toLocal8Bit(), QCryptographicHash::Sha256);
+    QByteArray hashKey = QCryptographicHash::hash(key.toLocal8Bit(), QCryptographicHash::Blake2s_128);
     QByteArray encodeText = encryption.encode(inputStr.toLocal8Bit(), hashKey, iv);
 
     QByteArray decodedText = encryption.removePadding(encryption.decode(encodeText, hashKey, iv));
