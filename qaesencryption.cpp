@@ -4,6 +4,7 @@
 
 #ifdef USE_INTEL_AES_IF_AVAILABLE
 #include "aesni/aesni-key-exp.h"
+#include "aesni/aesni-key-init.h"
 #include "aesni/aesni-enc-ecb.h"
 #include "aesni/aesni-enc-cbc.h"
 #endif
@@ -23,9 +24,9 @@ QByteArray QAESEncryption::Decrypt(QAESEncryption::Aes level, QAESEncryption::Mo
      return QAESEncryption(level, mode, padding).decode(rawText, key, iv);
 }
 
-QByteArray QAESEncryption::ExpandKey(QAESEncryption::Aes level, QAESEncryption::Mode mode, const QByteArray &key)
+QByteArray QAESEncryption::ExpandKey(QAESEncryption::Aes level, QAESEncryption::Mode mode, const QByteArray &key, bool isEncryptionKey)
 {
-     return QAESEncryption(level, mode).expandKey(key);
+     return QAESEncryption(level, mode).expandKey(key, isEncryptionKey);
 }
 
 QByteArray QAESEncryption::RemovePadding(const QByteArray &rawText, QAESEncryption::Padding padding)
@@ -170,7 +171,7 @@ QByteArray QAESEncryption::getPadding(int currSize, int alignment)
     return QByteArray();
 }
 
-QByteArray QAESEncryption::expandKey(const QByteArray &key)
+QByteArray QAESEncryption::expandKey(const QByteArray &key, bool isEncryptionKey)
 {
 
 #ifdef USE_INTEL_AES_IF_AVAILABLE
@@ -486,7 +487,7 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
     if (m_mode >= CBC && (iv.isEmpty() || iv.size() != m_blocklen))
        return QByteArray();
 
-    QByteArray expandedKey = expandKey(key);
+    QByteArray expandedKey = expandKey(key, true);
     QByteArray alignedText(rawText);
 
     //Fill array with padding
@@ -577,7 +578,7 @@ QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &k
        return QByteArray();
 
     QByteArray ret;
-    QByteArray expandedKey = expandKey(key);
+    QByteArray expandedKey = expandKey(key, true);
 
     switch(m_mode)
     {
