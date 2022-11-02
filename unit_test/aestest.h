@@ -30,7 +30,7 @@ private slots:
     void CFB256LongText();
 
     void OFB128Crypt();
-    void OFB256String();
+    void OFB128String();
 
     void CBC256StringEvenISO();
     void CBC256StringEvenPKCS7();

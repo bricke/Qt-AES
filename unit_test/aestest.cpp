@@ -125,7 +125,7 @@ void AesTest::ECB256String()
 }
 
 
-////==================CBC TESTING=========================
+//==================CBC TESTING=========================
 
 void AesTest::CBC128Crypt()
 {
@@ -185,7 +185,7 @@ void AesTest::OFB128Crypt()
     QCOMPARE(encryption.encode(in, key16, iv), outOFB128);
 }
 
-void AesTest::OFB256String()
+void AesTest::OFB128String()
 {
     QAESEncryption encryption(QAESEncryption::AES_128, QAESEncryption::OFB, QAESEncryption::PKCS7);
 
@@ -194,7 +194,7 @@ void AesTest::OFB256String()
                         "National Institute of Standards and Technology (NIST) in 2001");
     QString key("123456789123");
 
-    QByteArray hashKey = QCryptographicHash::hash(key.toLocal8Bit(), QCryptographicHash::Blake2s_128);
+    QByteArray hashKey = QCryptographicHash::hash(key.toLocal8Bit(), QCryptographicHash::Md5);
     QByteArray encodeText = encryption.encode(inputStr.toLocal8Bit(), hashKey, iv);
 
     QByteArray decodedText = encryption.removePadding(encryption.decode(encodeText, hashKey, iv));

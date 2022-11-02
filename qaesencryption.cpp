@@ -175,14 +175,15 @@ QByteArray QAESEncryption::expandKey(const QByteArray &key, bool isEncryptionKey
 {
 
 #ifdef USE_INTEL_AES_IF_AVAILABLE
-    if (true){        //should be check_aesni_support() here, but somehow this method doesn't wanna get called :shrug:
-          switch(m_level) {
+    if (m_aesNIAvailable) {
+          switch(m_level)
+          {
           case AES_128: {
               AES128 aes128;
               AES_KEY aesKey;
-              if(isEncryptionKey){
+              if (isEncryptionKey){
                   AES_set_encrypt_key((unsigned char*) key.constData(), aes128.userKeySize, &aesKey);
-              }else{
+              } else {
                   AES_set_decrypt_key((unsigned char*) key.constData(), aes128.userKeySize, &aesKey);
               }
 
@@ -196,9 +197,9 @@ QByteArray QAESEncryption::expandKey(const QByteArray &key, bool isEncryptionKey
           case AES_192: {
               AES192 aes192;
               AES_KEY aesKey;
-              if(isEncryptionKey){
+              if (isEncryptionKey){
                   AES_set_encrypt_key((unsigned char*) key.constData(), aes192.userKeySize, &aesKey);
-              }else{
+              } else {
                   AES_set_decrypt_key((unsigned char*) key.constData(), aes192.userKeySize, &aesKey);
               }
 
@@ -212,9 +213,9 @@ QByteArray QAESEncryption::expandKey(const QByteArray &key, bool isEncryptionKey
           case AES_256: {
               AES256 aes256;
               AES_KEY aesKey;
-              if(isEncryptionKey){
+              if (isEncryptionKey){
                   AES_set_encrypt_key((unsigned char*) key.constData(), aes256.userKeySize, &aesKey);
-              }else{
+              } else {
                   AES_set_decrypt_key((unsigned char*) key.constData(), aes256.userKeySize, &aesKey);
               }
 
@@ -229,59 +230,59 @@ QByteArray QAESEncryption::expandKey(const QByteArray &key, bool isEncryptionKey
               return QByteArray();
               break;
           }
-      } else
+    } else
 #endif
-  {
+    {
+        Q_UNUSED(isEncryptionKey);
+        int i, k;
+        quint8 tempa[4]; // Used for the column/row operations
+        QByteArray roundKey(key); // The first round key is the key itself.
 
-      int i, k;
-      quint8 tempa[4]; // Used for the column/row operations
-      QByteArray roundKey(key); // The first round key is the key itself.
-
-      // All other round keys are found from the previous round keys.
-      //i == Nk
-      for(i = m_nk; i < m_nb * (m_nr + 1); i++)
-      {
-        tempa[0] = (quint8) roundKey.at((i-1) * 4 + 0);
-        tempa[1] = (quint8) roundKey.at((i-1) * 4 + 1);
-        tempa[2] = (quint8) roundKey.at((i-1) * 4 + 2);
-        tempa[3] = (quint8) roundKey.at((i-1) * 4 + 3);
-
-        if (i % m_nk == 0)
+        // All other round keys are found from the previous round keys.
+        //i == Nk
+        for(i = m_nk; i < m_nb * (m_nr + 1); i++)
         {
-            // This function shifts the 4 bytes in a word to the left once.
-            // [a0,a1,a2,a3] becomes [a1,a2,a3,a0]
+            tempa[0] = (quint8) roundKey.at((i-1) * 4 + 0);
+            tempa[1] = (quint8) roundKey.at((i-1) * 4 + 1);
+            tempa[2] = (quint8) roundKey.at((i-1) * 4 + 2);
+            tempa[3] = (quint8) roundKey.at((i-1) * 4 + 3);
 
-            // Function RotWord()
-            k = tempa[0];
-            tempa[0] = tempa[1];
-            tempa[1] = tempa[2];
-            tempa[2] = tempa[3];
-            tempa[3] = k;
+            if (i % m_nk == 0)
+            {
+                // This function shifts the 4 bytes in a word to the left once.
+                // [a0,a1,a2,a3] becomes [a1,a2,a3,a0]
 
-            // Function Subword()
-            tempa[0] = getSBoxValue(tempa[0]);
-            tempa[1] = getSBoxValue(tempa[1]);
-            tempa[2] = getSBoxValue(tempa[2]);
-            tempa[3] = getSBoxValue(tempa[3]);
+                // Function RotWord()
+                k = tempa[0];
+                tempa[0] = tempa[1];
+                tempa[1] = tempa[2];
+                tempa[2] = tempa[3];
+                tempa[3] = k;
 
-            tempa[0] =  tempa[0] ^ Rcon[i/m_nk];
+                // Function Subword()
+                tempa[0] = getSBoxValue(tempa[0]);
+                tempa[1] = getSBoxValue(tempa[1]);
+                tempa[2] = getSBoxValue(tempa[2]);
+                tempa[3] = getSBoxValue(tempa[3]);
+
+                tempa[0] =  tempa[0] ^ Rcon[i/m_nk];
+            }
+
+            if (m_level == AES_256 && i % m_nk == 4)
+            {
+                // Function Subword()
+                tempa[0] = getSBoxValue(tempa[0]);
+                tempa[1] = getSBoxValue(tempa[1]);
+                tempa[2] = getSBoxValue(tempa[2]);
+                tempa[3] = getSBoxValue(tempa[3]);
+            }
+            roundKey.insert(i * 4 + 0, (quint8) roundKey.at((i - m_nk) * 4 + 0) ^ tempa[0]);
+            roundKey.insert(i * 4 + 1, (quint8) roundKey.at((i - m_nk) * 4 + 1) ^ tempa[1]);
+            roundKey.insert(i * 4 + 2, (quint8) roundKey.at((i - m_nk) * 4 + 2) ^ tempa[2]);
+            roundKey.insert(i * 4 + 3, (quint8) roundKey.at((i - m_nk) * 4 + 3) ^ tempa[3]);
         }
-
-        if (m_level == AES_256 && i % m_nk == 4)
-        {
-            // Function Subword()
-            tempa[0] = getSBoxValue(tempa[0]);
-            tempa[1] = getSBoxValue(tempa[1]);
-            tempa[2] = getSBoxValue(tempa[2]);
-            tempa[3] = getSBoxValue(tempa[3]);
-        }
-        roundKey.insert(i * 4 + 0, (quint8) roundKey.at((i - m_nk) * 4 + 0) ^ tempa[0]);
-        roundKey.insert(i * 4 + 1, (quint8) roundKey.at((i - m_nk) * 4 + 1) ^ tempa[1]);
-        roundKey.insert(i * 4 + 2, (quint8) roundKey.at((i - m_nk) * 4 + 2) ^ tempa[2]);
-        roundKey.insert(i * 4 + 3, (quint8) roundKey.at((i - m_nk) * 4 + 3) ^ tempa[3]);
-      }
-      return roundKey;
-  }
+        return roundKey;
+    }
 }
 
 // This function adds the round key to state.
@@ -597,15 +598,15 @@ QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &k
         QByteArray ret;
         QByteArray expandedKey;
 
-    #ifdef USE_INTEL_AES_IF_AVAILABLE
-        if(m_aesNIAvailable && m_mode <= CBC){
+#ifdef USE_INTEL_AES_IF_AVAILABLE
+        if (m_aesNIAvailable && m_mode <= CBC){
             expandedKey = expandKey(key, false);
-        }else{
+        } else {
             expandedKey = expandKey(key, true);
         }
-    #else
-        expandedKey = expandKey(key, expandedKey, true);
-    #endif
+#else
+        expandedKey = expandKey(key, true);
+#endif
         //false or true here is very important
         //the expandedKeys aren't the same for !aes-ni! ENcryption and DEcryption (only CBC and EBC)
         //but if you are !NOT! using aes-ni then the expandedKeys for encryption and decryption are the SAME!!!
