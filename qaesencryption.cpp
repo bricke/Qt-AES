@@ -560,6 +560,20 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
         return ret;
     }
     break;
+    case CCBC: {
+        QByteArray ret;
+        QByteArray iv1Temp(iv1);
+        QByteArray iv2Temp(iv2);
+        for(int i=0; i < alignedText.size(); i+= m_blocklen) {
+            iv2Temp = incrBytes(iv2Temp, counterInc);
+            QByteArray alignedBlock = alignedText.mid(i, m_blocklen);
+            alignedText.replace(i, m_blocklen, byteXor(alignedBlock,iv1Temp));
+            ret.append(byteXor(cipher(expandedKey, alignedText.mid(i, m_blocklen)), iv2Temp));
+            iv1Temp = ret.mid(i, m_blocklen);
+        }
+        return ret;
+    }
+    break;
     case PCBC: {
         QByteArray ret; //ENCODE
         QByteArray ivTemp(iv1);
@@ -633,6 +647,18 @@ QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &k
                 ret.append(invCipher(expandedKey, rawText.mid(i, m_blocklen)));
                 ret.replace(i, m_blocklen, byteXor(ret.mid(i, m_blocklen),ivTemp));
                 ivTemp = rawText.mid(i, m_blocklen);
+            }
+        }
+        break;
+    case CCBC: {
+            QByteArray iv1Temp(iv1); //DECODE
+            QByteArray iv2Temp(iv2);
+            for(int i=0; i < rawText.size(); i+= m_blocklen){
+                iv2Temp = incrBytes(iv2Temp, counterInc);
+                QByteArray rawBlock = rawText.mid(i, m_blocklen);
+                ret.append(invCipher(expandedKey, byteXor(rawBlock, iv2Temp))); //
+                ret.replace(i, m_blocklen, byteXor(ret.mid(i, m_blocklen),iv1Temp));
+                iv1Temp = ret.mid(i, m_blocklen);
             }
         }
         break;

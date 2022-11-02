@@ -29,6 +29,7 @@ public:
     enum Mode {
         ECB,
         CBC,
+        CCBC,
         PCBC,
         CPCBC,
         CFB,
