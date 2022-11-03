@@ -30,7 +30,7 @@ void AES_CBC_encrypt(const unsigned char *in,
         for(j=1; j <number_of_rounds; j++)
             feedback = _mm_aesenc_si128 (feedback,((__m128i*)key)[j]);
         feedback = _mm_aesenclast_si128 (feedback,((__m128i*)key)[j]);
-        _mm_storeu_si128 (&((__m128i*)out)[i],feedback);
+                _mm_storeu_si128 (&((__m128i*)out)[i],feedback);
     }
 }
 
