@@ -27,7 +27,10 @@ private slots:
 
     void CFB256String();
 
-    void CFB256LongText();
+    void CFB256SmallSizeText();
+    void CFB256MediumSizeText();
+    void CFB256LargeSizeText();
+    void CFB256XLargeSizeText();
 
     void OFB128Crypt();
     void OFB256String();

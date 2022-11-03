@@ -3,6 +3,6 @@
         <file>unit_test/alices-in-wonderland.txt</file>
         <file>unit_test/la-divina-commedia.txt</file>
         <file>unit_test/moby-dick.txt</file>
-        <file>unit_test/shakespeare-complete-work.txt</file>
+        <file>unit_test/shakespeare-complete-works.txt</file>
     </qresource>
 </RCC>
