@@ -61,7 +61,6 @@ void AES_CBC_decrypt(const unsigned char *in,
     }
 }
 
-#endif
 
 }
 
