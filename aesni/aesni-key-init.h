@@ -12,7 +12,7 @@
 typedef struct KEY_SCHEDULE{
     ALIGN16 unsigned char KEY[16*15];
     unsigned int nr;
-}AES_KEY;
+} AES_KEY;
 
 int AES_set_encrypt_key (const unsigned char *userKey,
                          const int bits,
