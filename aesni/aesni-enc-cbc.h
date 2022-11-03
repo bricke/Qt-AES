@@ -1,7 +1,6 @@
 #ifndef AESNIENCCBC_H
 #define AESNIENCCBC_H
 
-#include <QDebug>
 #include <chrono>
 #include <iostream>
 #include <wmmintrin.h>
@@ -35,7 +34,6 @@ void AES_CBC_encrypt(const unsigned char *in,
     }
 }
 
-#if 1
 void AES_CBC_decrypt(const unsigned char *in,
                      unsigned char *out,
                      unsigned char ivec[16],
@@ -63,7 +61,6 @@ void AES_CBC_decrypt(const unsigned char *in,
     }
 }
 
-#endif
 
 }
 

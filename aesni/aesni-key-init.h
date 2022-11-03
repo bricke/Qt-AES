@@ -14,6 +14,16 @@ typedef struct KEY_SCHEDULE{
     unsigned int nr;
 }AES_KEY;
 
+/*!
+ * @brief AES_set_encrypt_key takes the "userKey" and computes it to an allowed AES_Encryption_Key "key" of size "bits"
+ * @param userKey
+ * @param bits
+ * @param key
+ * @return -1 if userKey or key is empty/nullptr
+ * @return 0  if encryption-key got succesfully computed
+ * @return -2 if bits didn't match 128 or 192 or 256 (allowed key sizes)
+ *
+ */
 int AES_set_encrypt_key (const unsigned char *userKey,
                          const int bits,
                          AES_KEY *key)
@@ -42,6 +52,16 @@ int AES_set_encrypt_key (const unsigned char *userKey,
      return -2;
 }
 
+/*!
+ * @brief AES_set_decrypt_key takes the "userKey" and computes it to an allowed AES_Decryption_Key "key" of size "bits"
+ * @param userKey
+ * @param bits
+ * @param key
+ * @return -1 if userKey or key is empty/nullptr
+ * @return 0  if decryption-key got succesfully computed
+ * @return -2 if bits didn't match 128 or 192 or 256 (allowed key sizes)
+ *
+ */
 int AES_set_decrypt_key (const unsigned char *userKey,
                          const int bits,
                          AES_KEY *key)

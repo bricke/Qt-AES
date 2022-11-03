@@ -1,6 +1,4 @@
 #include "qaesencryption.h"
-#include <QDebug>
-#include <QVector>
 
 #ifdef USE_INTEL_AES_IF_AVAILABLE
 #include "aesni/aesni-key-exp.h"
@@ -175,7 +173,7 @@ QByteArray QAESEncryption::expandKey(const QByteArray &key, bool isEncryptionKey
 {
 
 #ifdef USE_INTEL_AES_IF_AVAILABLE
-    if (true){        //should be check_aesni_support() here, but somehow this method doesn't wanna get called :shrug:
+    if (m_aesNIAvailable){
           switch(m_level) {
           case AES_128: {
               AES128 aes128;
@@ -604,7 +602,7 @@ QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &k
             expandedKey = expandKey(key, true);
         }
     #else
-        expandedKey = expandKey(key, expandedKey, true);
+        expandedKey = expandKey(key, true);
     #endif
         //false or true here is very important
         //the expandedKeys aren't the same for !aes-ni! ENcryption and DEcryption (only CBC and EBC)

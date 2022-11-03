@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 7.0.2, 2022-10-31T23:28:36. -->
+<!-- Written by QtCreator 7.0.2, 2022-11-01T00:36:10. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -67,7 +67,26 @@
     <value type="bool" key="AutoTest.Framework.QtQuickTest">true</value>
     <value type="bool" key="AutoTest.Framework.QtTest">true</value>
    </valuemap>
-   <valuemap type="QVariantMap" key="AutoTest.CheckStates"/>
+   <valuemap type="QVariantMap" key="AutoTest.CheckStates">
+    <value type="Qt::CheckState" key="1@D:/Freizeit/Git-Repositories/Qt-AES-Decrypt/unit_test/aestest.cpp:CBC128Crypt">Checked</value>
+    <value type="Qt::CheckState" key="1@D:/Freizeit/Git-Repositories/Qt-AES-Decrypt/unit_test/aestest.cpp:CBC128Decrypt">Checked</value>
+    <value type="Qt::CheckState" key="1@D:/Freizeit/Git-Repositories/Qt-AES-Decrypt/unit_test/aestest.cpp:CBC256StringEvenISO">Checked</value>
+    <value type="Qt::CheckState" key="1@D:/Freizeit/Git-Repositories/Qt-AES-Decrypt/unit_test/aestest.cpp:CBC256StringEvenPKCS7">Checked</value>
+    <value type="Qt::CheckState" key="1@D:/Freizeit/Git-Repositories/Qt-AES-Decrypt/unit_test/aestest.cpp:CFB256LongText">Checked</value>
+    <value type="Qt::CheckState" key="1@D:/Freizeit/Git-Repositories/Qt-AES-Decrypt/unit_test/aestest.cpp:CFB256String">Checked</value>
+    <value type="Qt::CheckState" key="1@D:/Freizeit/Git-Repositories/Qt-AES-Decrypt/unit_test/aestest.cpp:ECB128Crypt">Checked</value>
+    <value type="Qt::CheckState" key="1@D:/Freizeit/Git-Repositories/Qt-AES-Decrypt/unit_test/aestest.cpp:ECB128Decrypt">Checked</value>
+    <value type="Qt::CheckState" key="1@D:/Freizeit/Git-Repositories/Qt-AES-Decrypt/unit_test/aestest.cpp:ECB192Crypt">Checked</value>
+    <value type="Qt::CheckState" key="1@D:/Freizeit/Git-Repositories/Qt-AES-Decrypt/unit_test/aestest.cpp:ECB192Decrypt">Checked</value>
+    <value type="Qt::CheckState" key="1@D:/Freizeit/Git-Repositories/Qt-AES-Decrypt/unit_test/aestest.cpp:ECB256Crypt">Checked</value>
+    <value type="Qt::CheckState" key="1@D:/Freizeit/Git-Repositories/Qt-AES-Decrypt/unit_test/aestest.cpp:ECB256Decrypt">Checked</value>
+    <value type="Qt::CheckState" key="1@D:/Freizeit/Git-Repositories/Qt-AES-Decrypt/unit_test/aestest.cpp:ECB256String">Checked</value>
+    <value type="Qt::CheckState" key="1@D:/Freizeit/Git-Repositories/Qt-AES-Decrypt/unit_test/aestest.cpp:OFB128Crypt">Checked</value>
+    <value type="Qt::CheckState" key="1@D:/Freizeit/Git-Repositories/Qt-AES-Decrypt/unit_test/aestest.cpp:OFB256String">Checked</value>
+    <value type="Qt::CheckState" key="1@D:/Freizeit/Git-Repositories/Qt-AES-Decrypt/unit_test/aestest.cpp:initTestCase">Unchecked</value>
+    <value type="Qt::CheckState" key="1@D:/Freizeit/Git-Repositories/Qt-AES-Decrypt/unit_test/aestest.h:AesTest">Checked</value>
+    <value type="Qt::CheckState" key="1@D:/Freizeit/Git-Repositories/Qt-AES-Decrypt/unit_test/aestest.h:cleanupTestCase">Unchecked</value>
+   </valuemap>
    <value type="int" key="AutoTest.RunAfterBuild">0</value>
    <value type="bool" key="AutoTest.UseGlobal">true</value>
    <valuelist type="QVariantList" key="ClangCodeModel.CustomCommandLineKey">
@@ -240,12 +259,14 @@
     <valuelist type="QVariantList" key="CustomOutputParsers"/>
     <value type="int" key="PE.EnvironmentAspect.Base">2</value>
     <valuelist type="QVariantList" key="PE.EnvironmentAspect.Changes"/>
-    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">ProjectExplorer.CustomExecutableRunConfiguration</value>
-    <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey"></value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">Qt4ProjectManager.Qt4RunConfiguration:D:/Freizeit/Git-Repositories/Qt-AES-Decrypt/qaesencryption.pro</value>
+    <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">D:/Freizeit/Git-Repositories/Qt-AES-Decrypt/qaesencryption.pro</value>
     <value type="bool" key="RunConfiguration.UseCppDebugger">false</value>
     <value type="bool" key="RunConfiguration.UseCppDebuggerAuto">true</value>
+    <value type="bool" key="RunConfiguration.UseLibrarySearchPath">true</value>
     <value type="bool" key="RunConfiguration.UseQmlDebugger">false</value>
     <value type="bool" key="RunConfiguration.UseQmlDebuggerAuto">true</value>
+    <value type="QString" key="RunConfiguration.WorkingDirectory.default">D:/Freizeit/Git-Repositories/build-qaesencryption-Desktop_Qt_6_2_2_MinGW_64_bit-Debug</value>
    </valuemap>
    <value type="qlonglong" key="ProjectExplorer.Target.RunConfigurationCount">1</value>
   </valuemap>
