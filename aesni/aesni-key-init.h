@@ -12,7 +12,7 @@
 typedef struct KEY_SCHEDULE{
     ALIGN16 unsigned char KEY[16*15];
     unsigned int nr;
-}AES_KEY;
+} AES_KEY;
 
 /*!
  * @brief AES_set_encrypt_key takes the "userKey" and computes it to an allowed AES_Encryption_Key "key" of size "bits"
