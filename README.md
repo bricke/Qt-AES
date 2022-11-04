@@ -40,6 +40,9 @@ The class supports the following operating modes
 
 * ECB
 * CBC
+* CCBC
+* PCBC
+* CPCBC
 * CFB
 * OFB
 
