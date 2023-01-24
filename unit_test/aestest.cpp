@@ -125,7 +125,7 @@ void AesTest::ECB256String()
 }
 
 
-////==================CBC TESTING=========================
+//==================CBC TESTING=========================
 
 void AesTest::CBC128Crypt()
 {
@@ -244,7 +244,7 @@ void AesTest::OFB128Crypt()
 
 void AesTest::OFB256String()
 {
-    QAESEncryption encryption(QAESEncryption::AES_128, QAESEncryption::OFB, QAESEncryption::PKCS7);
+    QAESEncryption encryption(QAESEncryption::AES_256, QAESEncryption::OFB, QAESEncryption::PKCS7);
 
     QString inputStr("The Advanced Encryption Standard (AES), also known by its original name Rijndael "
                         "is a specification for the encryption of electronic data established by the U.S. "

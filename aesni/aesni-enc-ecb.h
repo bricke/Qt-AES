@@ -19,6 +19,7 @@ void AES_ECB_encrypt(const unsigned char *in,  //pointer to the PLAINTEXT
         length = length/16+1;
     else
         length = length/16;
+
     for(i = 0; i < length; i++) {
         tmp = _mm_loadu_si128 (&((__m128i*)in)[i]);
         tmp = _mm_xor_si128 (tmp,((__m128i*)key)[0]);
@@ -30,7 +31,6 @@ void AES_ECB_encrypt(const unsigned char *in,  //pointer to the PLAINTEXT
         }
 }
 
-#if 0
 void AES_ECB_decrypt(const unsigned char *in,  //pointer to the CIPHERTEXT
                      unsigned char *out,       //pointer to the DECRYPTED TEXT buffer
                      unsigned long length,     //text length in bytes
@@ -54,7 +54,6 @@ void AES_ECB_decrypt(const unsigned char *in,  //pointer to the CIPHERTEXT
         _mm_storeu_si128 (&((__m128i*)out)[i],tmp);
     }
 }
-#endif
 
 }
 

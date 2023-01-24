@@ -39,20 +39,87 @@ public:
       ISO
     };
 
+    /*!
+     * \brief static method call to encrypt data given by rawText
+     * \param level:    AES::Aes level
+     * \param mode:     AES::Mode mode
+     * \param rawText:  input text
+     * \param key:      user-key (key.size either 128, 192, 256 bits depending on AES::Aes)
+     * \param iv:       initialisation-vector (iv.size is 128 bits (16 Bytes))
+     * \param padding:  AES::Padding standard
+     * \return encrypted cipher
+     */
     static QByteArray Crypt(QAESEncryption::Aes level, QAESEncryption::Mode mode, const QByteArray &rawText, const QByteArray &key,
                             const QByteArray &iv = QByteArray(), QAESEncryption::Padding padding = QAESEncryption::ISO);
+    /*!
+     * \brief static method call to decrypt data given by rawText
+     * \param level:    AES::Aes level
+     * \param mode:     AES::Mode mode
+     * \param rawText:  input text
+     * \param key:      user-key (key.size either 128, 192, 256 bits depending on AES::Aes)
+     * \param iv:       initialisation-vector (iv.size is 128 bits (16 Bytes))
+     * \param padding:  AES::Padding standard
+     * \return decrypted cipher with padding
+     */
     static QByteArray Decrypt(QAESEncryption::Aes level, QAESEncryption::Mode mode, const QByteArray &rawText, const QByteArray &key,
                               const QByteArray &iv = QByteArray(), QAESEncryption::Padding padding = QAESEncryption::ISO);
-    static QByteArray ExpandKey(QAESEncryption::Aes level, QAESEncryption::Mode mode, const QByteArray &key);
+    /*!
+     * \brief static method call to expand the user key to fit the encrypting/decrypting algorithm
+     * \param level:            AES::Aes level
+     * \param mode:             AES::Mode mode
+     * \param key:              user-key (key.size either 128, 192, 256 bits depending on AES::Aes)
+     * \param expKey:           output expanded key
+     * \param isEncryptionKey:    always 'true' || only 'false' when DECRYPTING in CBC or EBC mode with aesni (check if supported)
+     * \return AES-ready key
+     */
+    static QByteArray ExpandKey(QAESEncryption::Aes level, QAESEncryption::Mode mode, const QByteArray &key, bool isEncryptionKey);
+
+    /*!
+     * \brief static method call to remove padding from decrypted cipher given by rawText
+     * \param rawText:  inputText
+     * \param padding:  AES::Padding standard
+     * \return decrypted cipher with padding removed
+     */
     static QByteArray RemovePadding(const QByteArray &rawText, QAESEncryption::Padding padding = QAESEncryption::ISO);
 
     QAESEncryption(QAESEncryption::Aes level, QAESEncryption::Mode mode,
                    QAESEncryption::Padding padding = QAESEncryption::ISO);
 
+
+
+    /*!
+     * \brief object method call to encrypt data given by rawText
+     * \param rawText:  input text
+     * \param key:      user-key (key.size either 128, 192, 256 bits depending on AES::Aes)
+     * \param iv:       initialisation-vector (iv.size is 128 bits (16 Bytes))
+     * \return encrypted cipher
+     */
     QByteArray encode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv = QByteArray());
+
+    /*!
+     * \brief object method call to decrypt data given by rawText
+     * \param rawText:  input text
+     * \param key:      user-key (key.size either 128, 192, 256 bits depending on AES::Aes)
+     * \param iv:       initialisation-vector (iv.size is 128 bits (16 Bytes))
+     * \param padding:  AES::Padding standard
+     * \return decrypted cipher with padding
+     */
     QByteArray decode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv = QByteArray());
+
+    /*!
+     * \brief object method call to expand the user key to fit the encrypting/decrypting algorithm
+     * \param key:              user-key (key.size either 128, 192, 256 bits depending on AES::Aes)
+     * \param isEncryptionKey:    always 'true' || only 'false' when DECRYPTING in CBC or EBC mode with aesni (check if supported)
+     * \return AES-ready key
+     */
+    QByteArray expandKey(const QByteArray &key, bool isEncryptionKey);
+
+    /*!
+     * \brief object method call to remove padding from decrypted cipher given by rawText
+     * \param rawText:  inputText
+     * \return decrypted cipher with padding removed
+     */
     QByteArray removePadding(const QByteArray &rawText);
-    QByteArray expandKey(const QByteArray &key);
 
     QByteArray printArray(uchar *arr, int size);
 Q_SIGNALS:
@@ -77,6 +144,7 @@ private:
         int keylen = 32;
         int nr = 14;
         int expandedKey = 240;
+        int userKeySize = 256;
     };
 
     struct AES192{
@@ -84,6 +152,7 @@ private:
         int keylen = 24;
         int nr = 12;
         int expandedKey = 209;
+        int userKeySize = 192;
     };
 
     struct AES128{
@@ -91,6 +160,7 @@ private:
         int keylen = 16;
         int nr = 10;
         int expandedKey = 176;
+        int userKeySize = 128;
     };
 
     quint8 getSBoxValue(quint8 num){return sbox[num];}
