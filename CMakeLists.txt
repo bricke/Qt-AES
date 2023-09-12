@@ -11,7 +11,8 @@ option(QTAES_ENABLE_INSTALL "${PROJECT_NAME}: Enable install" ${QTAES_STANDALONE
 option(QTAES_ENABLE_TESTS "${PROJECT_NAME}: Enable tests" ${QTAES_STANDALONE_BUILD})
 option(QTAES_ENABLE_WERROR "${PROJECT_NAME}: Treat warnings as errors" OFF)
 
-set(QTAES_QT_VERSION 5 CACHE STRING "${PROJECT_NAME}: Qt version to use")
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
+set(QTAES_QT_VERSION ${QT_VERSION_MAJOR} CACHE STRING "${PROJECT_NAME}: Qt version to use")
 
 if(QTAES_ENABLE_INSTALL)
     include(GNUInstallDirs)
@@ -57,7 +58,6 @@ add_library(QtAES)
 
 if(NOT QTAES_STANDALONE_BUILD)
     add_library(${PROJECT_NAME}::QtAES ALIAS QtAES)
-    generate_export_header(QtAES EXPORT_MACRO_NAME QTAESSHARED_EXPORT)
 endif()
 
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/QAESEncryption" "#include \"qaesencryption.h\"")
