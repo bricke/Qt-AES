@@ -589,7 +589,7 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
 
 QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv)
 {
-    if ((m_mode >= CBC && (iv.isEmpty() || iv.size() != m_blocklen)) || key.size() != m_keyLen)
+    if ((m_mode >= CBC && (iv.isEmpty() || iv.size() != m_blocklen)) || key.size() != m_keyLen || rawText.size() % m_blocklen != 0)
            return QByteArray();
 
         QByteArray ret;
