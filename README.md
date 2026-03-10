@@ -188,6 +188,8 @@ On x86/x86-64 CPUs that support the AES-NI instruction set, Qt-AES can use nativ
 
 > [!NOTE]
 > AES-NI is only supported on x86/x86-64. Enabling it on any other architecture will produce a CMake configure error.
+>
+> **Windows / MSVC:** MSVC does not require a separate compiler flag to enable AES-NI intrinsics — they are available by default on x64 targets. The `-maes` flag check in CMakeLists.txt is a no-op under MSVC, which is expected and correct.
 
 ### What is accelerated
 
