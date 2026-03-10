@@ -6,6 +6,132 @@
 #include <QFile>
 #include "qaesencryption.h"
 
+// =================== generateKey TESTS =========================
+
+void AesTest::GenerateKeyLengthAES128()
+{
+    QCOMPARE(QAESEncryption::generateKey("pw", "salt", QAESEncryption::AES_128).size(), 16);
+}
+
+void AesTest::GenerateKeyLengthAES192()
+{
+    QCOMPARE(QAESEncryption::generateKey("pw", "salt", QAESEncryption::AES_192).size(), 24);
+}
+
+void AesTest::GenerateKeyLengthAES256()
+{
+    QCOMPARE(QAESEncryption::generateKey("pw", "salt", QAESEncryption::AES_256).size(), 32);
+}
+
+void AesTest::GenerateKeyDeterministic()
+{
+    QByteArray k1 = QAESEncryption::generateKey("password", "somesalt", QAESEncryption::AES_256);
+    QByteArray k2 = QAESEncryption::generateKey("password", "somesalt", QAESEncryption::AES_256);
+    QCOMPARE(k1, k2);
+}
+
+void AesTest::GenerateKeyEmptyPassword()
+{
+    QVERIFY(QAESEncryption::generateKey(QByteArray(), "salt", QAESEncryption::AES_256).isEmpty());
+}
+
+void AesTest::GenerateKeyEmptySalt()
+{
+    QVERIFY(QAESEncryption::generateKey("password", QByteArray(), QAESEncryption::AES_256).isEmpty());
+}
+
+void AesTest::GenerateKeyDifferentSalts()
+{
+    QByteArray k1 = QAESEncryption::generateKey("password", "salt-one", QAESEncryption::AES_256);
+    QByteArray k2 = QAESEncryption::generateKey("password", "salt-two", QAESEncryption::AES_256);
+    QVERIFY(k1 != k2);
+}
+
+void AesTest::GenerateKeyDifferentIterations()
+{
+    QByteArray k1 = QAESEncryption::generateKey("password", "salt", QAESEncryption::AES_256,
+                                                QCryptographicHash::Sha256, 1000);
+    QByteArray k2 = QAESEncryption::generateKey("password", "salt", QAESEncryption::AES_256,
+                                                QCryptographicHash::Sha256, 2000);
+    QVERIFY(k1 != k2);
+}
+
+void AesTest::GenerateKeyKnownAnswer()
+{
+    // All vectors verified against:
+    //   python3 -c "import hashlib; print(hashlib.pbkdf2_hmac('sha256', pw, salt, c, dk).hex())"
+
+    // Vector 1: c=1, dkLen=32 (AES-256)
+    QCOMPARE(QAESEncryption::generateKey("password", "salt", QAESEncryption::AES_256,
+                                         QCryptographicHash::Sha256, 1),
+             QByteArray::fromHex("120fb6cffcf8b32c43e7225256c4f837"
+                                 "a86548c92ccc35480805987cb70be17b"));
+
+    // Vector 2: c=2, dkLen=32 (AES-256)
+    QCOMPARE(QAESEncryption::generateKey("password", "salt", QAESEncryption::AES_256,
+                                         QCryptographicHash::Sha256, 2),
+             QByteArray::fromHex("ae4d0c95af6b46d32d0adff928f06dd0"
+                                 "2a303f8ef3c251dfd6e2d85a95474c43"));
+
+    // Vector 3: c=4096, dkLen=32 (AES-256)
+    QCOMPARE(QAESEncryption::generateKey("password", "salt", QAESEncryption::AES_256,
+                                         QCryptographicHash::Sha256, 4096),
+             QByteArray::fromHex("c5e478d59288c841aa530db6845c4c8d"
+                                 "962893a001ce4e11a4963873aa98134a"));
+
+    // Vector 4: long password and salt, c=4096, dkLen=16 (AES-128, first 16 bytes of 40-byte output)
+    // Full 40-byte result: 348c89dbcbd32b2f32d814b8116e84cf2b17347ebc1800181c4e2a1fb8dd53e1c635518c7dac47e9
+    QCOMPARE(QAESEncryption::generateKey("passwordPASSWORDpassword",
+                                         "saltSALTsaltSALTsaltSALTsaltSALTsalt",
+                                         QAESEncryption::AES_128,
+                                         QCryptographicHash::Sha256, 4096),
+             QByteArray::fromHex("348c89dbcbd32b2f32d814b8116e84cf"));
+
+    // Vector 5: embedded NUL bytes, c=4096, dkLen=16 (AES-128)
+    QByteArray pwWithNul  = QByteArray("pass\x00word",  9);
+    QByteArray saltWithNul = QByteArray("sa\x00lt",     5);
+    QCOMPARE(QAESEncryption::generateKey(pwWithNul, saltWithNul, QAESEncryption::AES_128,
+                                         QCryptographicHash::Sha256, 4096),
+             QByteArray::fromHex("89b69d0516f829893c696226650a8687"));
+}
+
+void AesTest::GenerateKeyRoundTripCBC256()
+{
+    QAESEncryption enc(QAESEncryption::AES_256, QAESEncryption::CBC, QAESEncryption::PKCS7);
+    QByteArray plain("Salted CBC-256 round-trip test.");
+    QByteArray ivBytes = QByteArray::fromHex("000102030405060708090a0b0c0d0e0f");
+    QByteArray key = QAESEncryption::generateKey("correct horse battery staple",
+                                                 QByteArray::fromHex("deadbeefcafebabe0102030405060708"),
+                                                 QAESEncryption::AES_256);
+    QCOMPARE(key.size(), 32);
+    QByteArray cipher = enc.encode(plain, key, ivBytes);
+    QByteArray decoded = enc.removePadding(enc.decode(cipher, key, ivBytes));
+    QCOMPARE(decoded, plain);
+}
+
+void AesTest::GenerateKeyIterationCapExceeded()
+{
+    // iterations > 500000 should be rejected to prevent callers causing an indefinite hang
+    QVERIFY(QAESEncryption::generateKey("password", "salt", QAESEncryption::AES_256,
+                                        QCryptographicHash::Sha256, 500001).isEmpty());
+    QVERIFY(!QAESEncryption::generateKey("password", "salt", QAESEncryption::AES_256,
+                                         QCryptographicHash::Sha256, 500000).isEmpty());
+}
+
+void AesTest::GenerateKeyRoundTripCFB128()
+{
+    QAESEncryption enc(QAESEncryption::AES_128, QAESEncryption::CFB, QAESEncryption::ISO);
+    QByteArray plain("CFB-128 salted key derivation test.");
+    QByteArray ivBytes = QByteArray::fromHex("aabbccddeeff00112233445566778899");
+    QByteArray key = QAESEncryption::generateKey("my-password",
+                                                 QByteArray::fromHex("0102030405060708090a0b0c0d0e0f10"),
+                                                 QAESEncryption::AES_128);
+    QCOMPARE(key.size(), 16);
+    QByteArray cipher = enc.encode(plain, key, ivBytes);
+    QByteArray decoded = enc.removePadding(enc.decode(cipher, key, ivBytes));
+    QCOMPARE(decoded, plain);
+}
+
 void AesTest::initTestCase()
 {
 #ifdef USE_INTEL_AES_IF_AVAILABLE

@@ -58,6 +58,8 @@ add_library(QtAES)
 
 if(NOT QTAES_STANDALONE_BUILD)
     add_library(${PROJECT_NAME}::QtAES ALIAS QtAES)
+    include(GenerateExportHeader)
+    generate_export_header(QtAES EXPORT_MACRO_NAME QTAESSHARED_EXPORT)
 endif()
 
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/QAESEncryption" "#include \"qaesencryption.h\"")
@@ -111,8 +113,7 @@ if(QTAES_ENABLE_TESTS)
             main.cpp
             res.qrc
             unit_test/aestest.cpp
-            unit_test/aestest.h
-            unit_test/longText.txt)
+            unit_test/aestest.h)
 
     target_link_libraries(AESTest
         PRIVATE

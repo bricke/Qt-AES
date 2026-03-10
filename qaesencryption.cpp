@@ -72,6 +72,59 @@ QByteArray QAESEncryption::RemovePadding(const QByteArray &rawText, QAESEncrypti
     }
     return ret;
 }
+QByteArray QAESEncryption::generateKey(const QByteArray &password, const QByteArray &salt,
+                                       QAESEncryption::Aes level,
+                                       QCryptographicHash::Algorithm algo, int iterations)
+{
+    // Cap iterations to prevent callers from causing an indefinite hang;
+    // 500k is well above any practical default while blocking runaway values.
+    if (password.isEmpty() || salt.isEmpty() || iterations < 1 || iterations > 500000)
+        return QByteArray();
+
+    int keyLen = 0;
+    switch (level) {
+    case AES_128: keyLen = 16; break;
+    case AES_192: keyLen = 24; break;
+    case AES_256: keyLen = 32; break;
+    default:      return QByteArray();
+    }
+
+    // PBKDF2 per RFC 2898 §5.2, PRF = HMAC-<algo>
+    // quint32 matches the RFC's 4-byte unsigned block counter, avoiding signed overflow.
+    QByteArray derived;
+    for (quint32 block = 1; derived.size() < keyLen; ++block) {
+        // U1 = HMAC(password, salt || INT(block))
+        QByteArray blockBytes(4, 0);
+        blockBytes[0] = static_cast<char>((block >> 24) & 0xff);
+        blockBytes[1] = static_cast<char>((block >> 16) & 0xff);
+        blockBytes[2] = static_cast<char>((block >>  8) & 0xff);
+        blockBytes[3] = static_cast<char>( block        & 0xff);
+
+        QMessageAuthenticationCode hmac(algo, password);
+        hmac.addData(salt);
+        hmac.addData(blockBytes);
+        QByteArray u = hmac.result();
+        QByteArray xorSum = u;
+
+        for (int i = 1; i < iterations; ++i) {
+            QMessageAuthenticationCode hmacI(algo, password);
+            hmacI.addData(u);
+            u = hmacI.result();
+            for (int j = 0; j < xorSum.size(); ++j)
+                xorSum[j] = static_cast<char>(static_cast<quint8>(xorSum[j]) ^ static_cast<quint8>(u[j]));
+        }
+        derived.append(xorSum);
+
+        // QByteArray does not zero memory on destruction, so key material would
+        // otherwise linger on the heap. memset before leaving scope to limit exposure.
+        memset(u.data(), 0, u.size());
+        memset(xorSum.data(), 0, xorSum.size());
+    }
+
+    QByteArray result = derived.left(keyLen);
+    memset(derived.data(), 0, derived.size());
+    return result;
+}
 /*
  * End Static function declarations
  * */
@@ -507,6 +560,7 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
         //Fill array with padding
         alignedText.append(getPadding(rawText.size(), m_blocklen));
 
+    QByteArray result;
     switch(m_mode)
     {
     case ECB: {
@@ -515,20 +569,17 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
             char expKey[expandedKey.size()];
             memcpy(expKey, expandedKey.data(), expandedKey.size());
 
-            QByteArray outText;
-            outText.resize(alignedText.size());
+            result.resize(alignedText.size());
             AES_ECB_encrypt((unsigned char*) alignedText.constData(),
-                            (unsigned char*) outText.data(),
+                            (unsigned char*) result.data(),
                             alignedText.size(),
                             expKey,
                             m_nr);
-            return outText;
+            break;
         }
 #endif
-        QByteArray ret;
         for(int i=0; i < alignedText.size(); i+= m_blocklen)
-            ret.append(cipher(expandedKey, alignedText.mid(i, m_blocklen)));
-        return ret;
+            result.append(cipher(expandedKey, alignedText.mid(i, m_blocklen)));
     }
     break;
     case CBC: {
@@ -539,52 +590,49 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
             char expKey[expandedKey.size()];
             memcpy(expKey, expandedKey.data(), expandedKey.size());
 
-            QByteArray outText;
-            outText.resize(alignedText.size());
+            result.resize(alignedText.size());
             AES_CBC_encrypt((unsigned char*) alignedText.constData(),
-                            (unsigned char*) outText.data(),
+                            (unsigned char*) result.data(),
                             ivec,
                             alignedText.size(),
                             expKey,
                             m_nr);
-            return outText;
+            break;
         }
 #endif
-        QByteArray ret;
         QByteArray ivTemp(iv);
         for(int i=0; i < alignedText.size(); i+= m_blocklen) {
             alignedText.replace(i, m_blocklen, byteXor(alignedText.mid(i, m_blocklen),ivTemp));
-            ret.append(cipher(expandedKey, alignedText.mid(i, m_blocklen)));
-            ivTemp = ret.mid(i, m_blocklen);
+            result.append(cipher(expandedKey, alignedText.mid(i, m_blocklen)));
+            ivTemp = result.mid(i, m_blocklen);
         }
-        return ret;
     }
     break;
     case CFB: {
-        QByteArray ret;
-        ret.append(byteXor(alignedText.left(m_blocklen), cipher(expandedKey, iv)));
+        result.append(byteXor(alignedText.left(m_blocklen), cipher(expandedKey, iv)));
         for(int i=0; i < alignedText.size(); i+= m_blocklen) {
             if (i+m_blocklen < alignedText.size())
-                ret.append(byteXor(alignedText.mid(i+m_blocklen, m_blocklen),
-                                   cipher(expandedKey, ret.mid(i, m_blocklen))));
+                result.append(byteXor(alignedText.mid(i+m_blocklen, m_blocklen),
+                                   cipher(expandedKey, result.mid(i, m_blocklen))));
         }
-        return ret;
     }
     break;
     case OFB: {
-    QByteArray ret;
         QByteArray ofbTemp;
         ofbTemp.append(cipher(expandedKey, iv));
         for (int i=m_blocklen; i < alignedText.size(); i += m_blocklen){
             ofbTemp.append(cipher(expandedKey, ofbTemp.right(m_blocklen)));
         }
-        ret.append(byteXor(alignedText, ofbTemp));
-        return ret;
+        result.append(byteXor(alignedText, ofbTemp));
     }
     break;
     default: break;
     }
-    return QByteArray();
+
+    // Zero the expanded key schedule before returning — it contains key-derived material
+    // and QByteArray does not zero on destruction.
+    memset(expandedKey.data(), 0, expandedKey.size());
+    return result;
 }
 
 QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv)
@@ -679,6 +727,10 @@ QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &k
         //do nothing
         break;
     }
+
+    // Zero the expanded key schedule before returning — it contains key-derived material
+    // and QByteArray does not zero on destruction.
+    memset(expandedKey.data(), 0, expandedKey.size());
     return ret;
 }
 
