@@ -1,8 +1,6 @@
 #ifndef AESNIENCCBC_H
 #define AESNIENCCBC_H
 
-#include <chrono>
-#include <iostream>
 #include <wmmintrin.h>
 
 namespace {

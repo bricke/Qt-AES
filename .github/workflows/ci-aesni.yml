@@ -1,12 +1,12 @@
-name: CI
+name: CI (AES-NI)
 
 on:
   push:
   pull_request:
 
 jobs:
-  test:
-    name: Tests — Qt ${{ matrix.qt_version }} / ${{ matrix.os }}
+  test-aesni:
+    name: AES-NI — Qt ${{ matrix.qt_version }} / ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -15,15 +15,7 @@ jobs:
           - os: ubuntu-latest
             qt_version: "6.7.0"
             qt_modules: ""
-          - os: ubuntu-latest
-            qt_version: "5.15.2"
-            qt_modules: ""
-          - os: windows-latest
-            qt_version: "6.7.0"
-            qt_modules: ""
-          - os: macos-latest
-            qt_version: "6.7.0"
-            qt_modules: ""
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -40,6 +32,7 @@ jobs:
           cmake -B build
           -DQTAES_ENABLE_TESTS=ON
           -DQTAES_ENABLE_WERROR=ON
+          -DQTAES_ENABLE_AESNI=ON
           -DCMAKE_BUILD_TYPE=Release
 
       - name: Build

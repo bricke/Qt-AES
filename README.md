@@ -5,6 +5,7 @@
 **Small and portable AES encryption library for Qt**
 
 [![CI](https://github.com/bricke/Qt-AES/actions/workflows/ci.yml/badge.svg)](https://github.com/bricke/Qt-AES/actions/workflows/ci.yml)
+[![CI (AES-NI)](https://github.com/bricke/Qt-AES/actions/workflows/ci-aesni.yml/badge.svg)](https://github.com/bricke/Qt-AES/actions/workflows/ci-aesni.yml)
 [![License: Unlicense](https://img.shields.io/badge/license-Unlicense-blue.svg)](http://unlicense.org/)
 
 AES-128 · AES-192 · AES-256 &nbsp;|&nbsp; ECB · CBC · CFB · OFB &nbsp;|&nbsp; PBKDF2 key derivation &nbsp;|&nbsp; Partial AES-NI support
@@ -178,6 +179,49 @@ QString decrypted = QString(QAESEncryption::RemovePadding(
 >
 > The static methods (`Crypt`, `Decrypt`, `ExpandKey`, `RemovePadding`, `generateKey`) are safe
 > to call concurrently, as each creates an independent temporary instance.
+
+---
+
+## AES-NI Hardware Acceleration
+
+On x86/x86-64 CPUs that support the AES-NI instruction set, Qt-AES can use native hardware instructions for a significant throughput improvement over the pure software implementation.
+
+> [!NOTE]
+> AES-NI is only supported on x86/x86-64. Enabling it on any other architecture will produce a CMake configure error.
+>
+> **Windows / MSVC:** MSVC does not require a separate compiler flag to enable AES-NI intrinsics — they are available by default on x64 targets. The `-maes` flag check in CMakeLists.txt is a no-op under MSVC, which is expected and correct.
+
+### What is accelerated
+
+| Mode | Encrypt | Decrypt |
+|------|---------|---------|
+| ECB  | ✅ | ✅ |
+| CBC  | ✅ | ✅ |
+| CFB  | — | — |
+| OFB  | — | — |
+
+CFB and OFB fall back to the software path transparently.
+
+### Enabling AES-NI
+
+Pass `-DQTAES_ENABLE_AESNI=ON` at configure time:
+
+```sh
+cmake -B build \
+  -DQTAES_ENABLE_AESNI=ON \
+  -DQTAES_ENABLE_TESTS=ON \
+  -DCMAKE_PREFIX_PATH=/path/to/Qt
+cmake --build build
+ctest --test-dir build -V
+```
+
+### Runtime detection
+
+Even with `QTAES_ENABLE_AESNI=ON`, the library queries the CPU at runtime via `CPUID`. If the running CPU does not support AES-NI the library silently falls back to the software implementation — no code changes are required.
+
+### API transparency
+
+AES-NI is entirely transparent to the caller. The same `encode()` / `decode()` API is used regardless of whether hardware acceleration is active. Ciphertext produced by the hardware path is identical to the software path and fully interoperable.
 
 ---
 

@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QByteArray>
 #include <QTest>
+#include "qaesencryption.h"
 
 class AesTest : public QObject
 {
@@ -50,6 +51,15 @@ private slots:
     void GenerateKeyRoundTripCBC256();
     void GenerateKeyRoundTripCFB128();
     void GenerateKeyIterationCapExceeded();
+
+#ifdef USE_INTEL_AES_IF_AVAILABLE
+    void AesNiECB128KnownAnswer();
+    void AesNiECB192KnownAnswer();
+    void AesNiECB256KnownAnswer();
+    void AesNiCBC128KnownAnswer();
+    void AesNiECB128RoundTrip();
+    void AesNiCBC256RoundTrip();
+#endif
 
     void cleanupTestCase(){}
 

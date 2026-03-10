@@ -569,7 +569,8 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
     case ECB: {
 #ifdef USE_INTEL_AES_IF_AVAILABLE
         if (m_aesNIAvailable){
-            char expKey[expandedKey.size()];
+            // Fixed-size buffer: AES key schedule is at most 240 bytes (AES-256, 15 * 16).
+            char expKey[240];
             memcpy(expKey, expandedKey.data(), expandedKey.size());
 
             result.resize(alignedText.size());
@@ -588,9 +589,11 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
     case CBC: {
 #ifdef USE_INTEL_AES_IF_AVAILABLE
         if (m_aesNIAvailable){
-            quint8 ivec[iv.size()];
+            // Fixed-size buffers — IV is always one AES block (16 bytes);
+            // key schedule is at most 240 bytes.
+            quint8 ivec[16];
             memcpy(ivec, iv.data(), iv.size());
-            char expKey[expandedKey.size()];
+            char expKey[240];
             memcpy(expKey, expandedKey.data(), expandedKey.size());
 
             result.resize(alignedText.size());
@@ -665,7 +668,8 @@ QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &k
     case ECB:
 #ifdef USE_INTEL_AES_IF_AVAILABLE
         if (m_aesNIAvailable){
-            char expKey[expandedKey.size()];                                //expandedKey
+            // Fixed-size buffer: AES key schedule is at most 240 bytes (AES-256, 15 * 16).
+            char expKey[240];
             memcpy(expKey, expandedKey.data(), expandedKey.size());
             ret.resize(rawText.size());
 
@@ -683,9 +687,11 @@ QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &k
     case CBC:
 #ifdef USE_INTEL_AES_IF_AVAILABLE
         if (m_aesNIAvailable){
-            quint8 ivec[iv.size()];                                         //IV
+            // Fixed-size buffers — IV is always one AES block (16 bytes);
+            // key schedule is at most 240 bytes.
+            quint8 ivec[16];
             memcpy(ivec, iv.constData(), iv.size());
-            char expKey[expandedKey.size()];                                //expandedKey
+            char expKey[240];
             memcpy(expKey, expandedKey.data(), expandedKey.size());
             ret.resize(rawText.size());
 

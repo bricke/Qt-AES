@@ -77,11 +77,20 @@ target_compile_definitions(QtAES
         QT_DISABLE_DEPRECATED_BEFORE=0x060000)
 
 if(QTAES_ENABLE_AESNI)
+    # AES-NI uses x86 intrinsics and inline asm — reject unsupported architectures at
+    # configure time rather than letting the build fail with a cryptic compiler error.
+    if(NOT (CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|i[3-6]86|x86"))
+        message(FATAL_ERROR
+            "QTAES_ENABLE_AESNI is only supported on x86/x86-64. "
+            "Detected processor: ${CMAKE_SYSTEM_PROCESSOR}")
+    endif()
+
     include(CheckCXXCompilerFlag)
 
     target_sources(QtAES
         PRIVATE
             aesni/aesni-key-exp.h
+            aesni/aesni-key-init.h
             aesni/aesni-enc-ecb.h
             aesni/aesni-enc-cbc.h)
 
