@@ -9,6 +9,8 @@
 
 #include <QObject>
 #include <QByteArray>
+#include <QCryptographicHash>
+#include <QMessageAuthenticationCode>
 
 #ifdef __linux__
 #ifndef __LP64__
@@ -81,6 +83,27 @@ public:
      * \return decrypted cipher with padding removed
      */
     static QByteArray RemovePadding(const QByteArray &rawText, QAESEncryption::Padding padding = QAESEncryption::ISO);
+
+    /*!
+     * \brief Derives an AES-ready key from a password and salt using PBKDF2 (RFC 2898).
+     *        Only QtCore is required — no QtNetwork dependency.
+     * \param password   User-supplied password.
+     * \param salt       Random salt (store alongside ciphertext; do not reuse across encryptions).
+     * \param level      Target AES key size: AES_128 => 16 bytes, AES_192 => 24 bytes, AES_256 => 32 bytes.
+     * \param algo       HMAC hash algorithm (default: Sha256).
+     * \param iterations PBKDF2 iteration count (default: 10000; capped at 500000).
+     * \return Derived key of the exact byte length required by \a level, or empty on invalid input.
+     *
+     * \note This implementation uses Qt's QMessageAuthenticationCode, which is a general-purpose
+     *       utility and is not guaranteed to be constant-time or security-audited as a cryptographic
+     *       primitive. For security-critical applications, prefer a dedicated library such as
+     *       OpenSSL (PKCS5_PBKDF2_HMAC) or libsodium.
+     */
+    static QByteArray generateKey(const QByteArray &password,
+                                  const QByteArray &salt,
+                                  QAESEncryption::Aes level,
+                                  QCryptographicHash::Algorithm algo = QCryptographicHash::Sha256,
+                                  int iterations = 10000);
 
     QAESEncryption(QAESEncryption::Aes level, QAESEncryption::Mode mode,
                    QAESEncryption::Padding padding = QAESEncryption::ISO);

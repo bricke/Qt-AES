@@ -113,8 +113,7 @@ if(QTAES_ENABLE_TESTS)
             main.cpp
             res.qrc
             unit_test/aestest.cpp
-            unit_test/aestest.h
-            unit_test/longText.txt)
+            unit_test/aestest.h)
 
     target_link_libraries(AESTest
         PRIVATE

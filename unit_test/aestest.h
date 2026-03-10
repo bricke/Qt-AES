@@ -38,6 +38,19 @@ private slots:
     void CBC256StringEvenISO();
     void CBC256StringEvenPKCS7();
 
+    void GenerateKeyLengthAES128();
+    void GenerateKeyLengthAES192();
+    void GenerateKeyLengthAES256();
+    void GenerateKeyDeterministic();
+    void GenerateKeyEmptyPassword();
+    void GenerateKeyEmptySalt();
+    void GenerateKeyDifferentSalts();
+    void GenerateKeyDifferentIterations();
+    void GenerateKeyKnownAnswer();
+    void GenerateKeyRoundTripCBC256();
+    void GenerateKeyRoundTripCFB128();
+    void GenerateKeyIterationCapExceeded();
+
     void cleanupTestCase(){}
 
 private:
