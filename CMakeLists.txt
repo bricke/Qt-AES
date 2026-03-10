@@ -6,17 +6,14 @@ if(PROJECT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     set(QTAES_STANDALONE_BUILD ON)
 endif()
 
-option(QTAES_ENABLE_AESNI "${PROJECT_NAME}: Enable AES-NI" OFF)
-option(QTAES_ENABLE_INSTALL "${PROJECT_NAME}: Enable install" ${QTAES_STANDALONE_BUILD})
-option(QTAES_ENABLE_TESTS "${PROJECT_NAME}: Enable tests" ${QTAES_STANDALONE_BUILD})
-option(QTAES_ENABLE_WERROR "${PROJECT_NAME}: Treat warnings as errors" OFF)
+option(QTAES_ENABLE_AESNI   "${PROJECT_NAME}: Enable AES-NI"            OFF)
+option(QTAES_ENABLE_INSTALL "${PROJECT_NAME}: Enable install"            ${QTAES_STANDALONE_BUILD})
+option(QTAES_ENABLE_TESTS   "${PROJECT_NAME}: Enable tests"              ${QTAES_STANDALONE_BUILD})
+option(QTAES_ENABLE_WERROR  "${PROJECT_NAME}: Treat warnings as errors"  OFF)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
-set(QTAES_QT_VERSION ${QT_VERSION_MAJOR} CACHE STRING "${PROJECT_NAME}: Qt version to use")
-
-if(QTAES_ENABLE_INSTALL)
-    include(GNUInstallDirs)
-endif()
+# GNUInstallDirs is needed for CMAKE_INSTALL_* variables used in
+# target_include_directories and the install() calls below.
+include(GNUInstallDirs)
 
 if(QTAES_STANDALONE_BUILD)
     if(NOT CMAKE_CXX_STANDARD)
@@ -38,23 +35,20 @@ if(QTAES_STANDALONE_BUILD)
     endif()
 endif()
 
-if(QTAES_QT_VERSION MATCHES "^([56])([.]|$)")
-    set(QT_PACKAGE_NAME Qt${CMAKE_MATCH_1})
+# Locate Qt (prefer Qt6, fall back to Qt5) and derive the versioned package name.
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
+set(QT_PACKAGE_NAME Qt${QT_VERSION_MAJOR})
 
-    set(QT_COMPS Core)
-    if(QTAES_ENABLE_TESTS)
-        list(APPEND QT_COMPS Test)
-    endif()
-
-    find_package(${QT_PACKAGE_NAME} ${QTAES_QT_VERSION} REQUIRED COMPONENTS ${QT_COMPS})
-else()
-    message(FATAL_ERROR "Qt version '${QTAES_QT_VERSION}' is not supported")
+set(QT_COMPS Core)
+if(QTAES_ENABLE_TESTS)
+    list(APPEND QT_COMPS Test)
 endif()
-
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
+find_package(${QT_PACKAGE_NAME} REQUIRED COMPONENTS ${QT_COMPS})
 
 add_library(QtAES)
+
+# Per-target MOC/RCC — avoid polluting parent builds when used as a subdirectory.
+set_target_properties(QtAES PROPERTIES AUTOMOC ON)
 
 if(NOT QTAES_STANDALONE_BUILD)
     add_library(${PROJECT_NAME}::QtAES ALIAS QtAES)
@@ -111,6 +105,9 @@ if(QTAES_ENABLE_TESTS)
 
     add_executable(AESTest)
 
+    # Per-target RCC for the test executable.
+    set_target_properties(AESTest PROPERTIES AUTOMOC ON AUTORCC ON)
+
     target_sources(AESTest
         PRIVATE
             main.cpp
@@ -118,10 +115,10 @@ if(QTAES_ENABLE_TESTS)
             unit_test/aestest.cpp
             unit_test/aestest.h)
 
+    # Qt::Core is already a transitive dependency via QtAES; only Test is needed here.
     target_link_libraries(AESTest
         PRIVATE
             QtAES
-            ${QT_PACKAGE_NAME}::Core
             ${QT_PACKAGE_NAME}::Test)
 
     add_test(
