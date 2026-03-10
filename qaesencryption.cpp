@@ -72,6 +72,48 @@ QByteArray QAESEncryption::RemovePadding(const QByteArray &rawText, QAESEncrypti
     }
     return ret;
 }
+QByteArray QAESEncryption::generateKey(const QByteArray &password, const QByteArray &salt,
+                                       QAESEncryption::Aes level,
+                                       QCryptographicHash::Algorithm algo, int iterations)
+{
+    if (password.isEmpty() || salt.isEmpty() || iterations < 1)
+        return QByteArray();
+
+    int keyLen = 0;
+    switch (level) {
+    case AES_128: keyLen = 16; break;
+    case AES_192: keyLen = 24; break;
+    case AES_256: keyLen = 32; break;
+    default:      return QByteArray();
+    }
+
+    // PBKDF2 per RFC 2898 §5.2, PRF = HMAC-<algo>
+    QByteArray derived;
+    for (int block = 1; derived.size() < keyLen; ++block) {
+        // U1 = HMAC(password, salt || INT(block))
+        QByteArray blockBytes(4, 0);
+        blockBytes[0] = static_cast<char>((block >> 24) & 0xff);
+        blockBytes[1] = static_cast<char>((block >> 16) & 0xff);
+        blockBytes[2] = static_cast<char>((block >>  8) & 0xff);
+        blockBytes[3] = static_cast<char>( block        & 0xff);
+
+        QMessageAuthenticationCode hmac(algo, password);
+        hmac.addData(salt);
+        hmac.addData(blockBytes);
+        QByteArray u = hmac.result();
+        QByteArray xorSum = u;
+
+        for (int i = 1; i < iterations; ++i) {
+            QMessageAuthenticationCode hmacI(algo, password);
+            hmacI.addData(u);
+            u = hmacI.result();
+            for (int j = 0; j < xorSum.size(); ++j)
+                xorSum[j] = static_cast<char>(static_cast<quint8>(xorSum[j]) ^ static_cast<quint8>(u[j]));
+        }
+        derived.append(xorSum);
+    }
+    return derived.left(keyLen);
+}
 /*
  * End Static function declarations
  * */
