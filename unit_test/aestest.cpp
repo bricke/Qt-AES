@@ -109,6 +109,15 @@ void AesTest::GenerateKeyRoundTripCBC256()
     QCOMPARE(decoded, plain);
 }
 
+void AesTest::GenerateKeyIterationCapExceeded()
+{
+    // iterations > 500000 should be rejected to prevent callers causing an indefinite hang
+    QVERIFY(QAESEncryption::generateKey("password", "salt", QAESEncryption::AES_256,
+                                        QCryptographicHash::Sha256, 500001).isEmpty());
+    QVERIFY(!QAESEncryption::generateKey("password", "salt", QAESEncryption::AES_256,
+                                         QCryptographicHash::Sha256, 500000).isEmpty());
+}
+
 void AesTest::GenerateKeyRoundTripCFB128()
 {
     QAESEncryption enc(QAESEncryption::AES_128, QAESEncryption::CFB, QAESEncryption::ISO);

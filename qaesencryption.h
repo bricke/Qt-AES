@@ -91,8 +91,13 @@ public:
      * \param salt       Random salt (store alongside ciphertext; do not reuse across encryptions).
      * \param level      Target AES key size: AES_128 => 16 bytes, AES_192 => 24 bytes, AES_256 => 32 bytes.
      * \param algo       HMAC hash algorithm (default: Sha256).
-     * \param iterations PBKDF2 iteration count (default: 10000).
+     * \param iterations PBKDF2 iteration count (default: 10000; capped at 500000).
      * \return Derived key of the exact byte length required by \a level, or empty on invalid input.
+     *
+     * \note This implementation uses Qt's QMessageAuthenticationCode, which is a general-purpose
+     *       utility and is not guaranteed to be constant-time or security-audited as a cryptographic
+     *       primitive. For security-critical applications, prefer a dedicated library such as
+     *       OpenSSL (PKCS5_PBKDF2_HMAC) or libsodium.
      */
     static QByteArray generateKey(const QByteArray &password,
                                   const QByteArray &salt,

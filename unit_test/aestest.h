@@ -49,6 +49,7 @@ private slots:
     void GenerateKeyKnownAnswer();
     void GenerateKeyRoundTripCBC256();
     void GenerateKeyRoundTripCFB128();
+    void GenerateKeyIterationCapExceeded();
 
     void cleanupTestCase(){}
 
