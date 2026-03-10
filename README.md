@@ -4,6 +4,7 @@
 
 **Small and portable AES encryption library for Qt**
 
+[![CI](https://github.com/bricke/Qt-AES/actions/workflows/ci.yml/badge.svg)](https://github.com/bricke/Qt-AES/actions/workflows/ci.yml)
 [![License: Unlicense](https://img.shields.io/badge/license-Unlicense-blue.svg)](http://unlicense.org/)
 
 AES-128 · AES-192 · AES-256 &nbsp;|&nbsp; ECB · CBC · CFB · OFB &nbsp;|&nbsp; PBKDF2 key derivation &nbsp;|&nbsp; Partial AES-NI support
