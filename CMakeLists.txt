@@ -58,9 +58,12 @@ add_library(QtAES)
 
 if(NOT QTAES_STANDALONE_BUILD)
     add_library(${PROJECT_NAME}::QtAES ALIAS QtAES)
-    include(GenerateExportHeader)
-    generate_export_header(QtAES EXPORT_MACRO_NAME QTAESSHARED_EXPORT)
 endif()
+
+# Generate export header unconditionally so that builds with
+# -DBUILD_SHARED_LIBS=ON work correctly in all modes.
+include(GenerateExportHeader)
+generate_export_header(QtAES EXPORT_MACRO_NAME QTAESSHARED_EXPORT)
 
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/QAESEncryption" "#include \"qaesencryption.h\"")
 
@@ -73,7 +76,7 @@ target_include_directories(QtAES
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
-        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}>)
 
 target_compile_definitions(QtAES
     PRIVATE
@@ -139,6 +142,7 @@ if(QTAES_ENABLE_INSTALL)
     install(
         FILES
             qaesencryption.h
+            "${CMAKE_CURRENT_BINARY_DIR}/qtaes_export.h"
             "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/QAESEncryption"
         DESTINATION
             ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
