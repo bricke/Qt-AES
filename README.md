@@ -1,89 +1,121 @@
+<div align="center">
+
 # Qt-AES
-Small and portable AES encryption class for Qt.
-Native support for all key sizes - 128/192/256 bits - ECB, CBC, CFB and OFB modes for all key sizes.
-Partial AES-NI support.
 
-## Usage
+**Small and portable AES encryption library for Qt**
 
-### Available Methods
-```
-// Encode rawText with key
-// iv is required for CBC, CFB and OFB modes
-// returns the encrypted byte array
-QByteArray encode(const QByteArray rawText, const QByteArray key, const QByteArray iv = QByteArray());
+[![License: Unlicense](https://img.shields.io/badge/license-Unlicense-blue.svg)](http://unlicense.org/)
 
-// Decode rawText with key
-// iv is required for CBC, CFB and OFB modes
-// returns the decrypted byte array
-QByteArray decode(const QByteArray rawText, const QByteArray key, const QByteArray iv = QByteArray());
+AES-128 · AES-192 · AES-256 &nbsp;|&nbsp; ECB · CBC · CFB · OFB &nbsp;|&nbsp; PBKDF2 key derivation &nbsp;|&nbsp; Partial AES-NI support
 
-// Key expansion in Rijndael schedule
-// returns the expanded key as byte array
-QByteArray expandKey(const QByteArray key);
+</div>
 
-// Remove padding from a decrypted byte array
-QByteArray removePadding(const QByteArray rawText);
+---
 
-// Derive an AES-ready key from a password and salt using PBKDF2-HMAC (RFC 2898)
-// returns a key of the exact byte length required by the chosen AES level
-static QByteArray generateKey(const QByteArray password, const QByteArray salt,
-                              QAESEncryption::Aes level,
-                              QCryptographicHash::Algorithm algo = QCryptographicHash::Sha256,
-                              int iterations = 10000);
-```
-The same methods are available as static calls
-```
-QAESEncryption::Crypt        => encode(...)
-QAESEncryption::Decrypt      => decode(...)
-QAESEncryption::ExpandKey    => expandKey(...)
-QAESEncryption::RemovePadding => removePadding(...)
-QAESEncryption::generateKey  => generateKey(...)
+## Features
+
+- All AES key sizes — 128, 192, 256 bit
+- Four cipher modes — ECB, CBC, CFB, OFB
+- Three padding schemes — ISO (default), PKCS7, ZERO
+- PBKDF2-HMAC key derivation (RFC 2898) — no QtNetwork required
+- Optional hardware acceleration via AES-NI (ECB and CBC)
+- Qt 5 and Qt 6 compatible
+- Single dependency: `QtCore`
+
+---
+
+## Getting Started
+
+### CMake
+
+```cmake
+find_package(QtAES REQUIRED)
+target_link_libraries(your_target PRIVATE QtAES::QtAES)
 ```
 
-#### AES Levels
-The class supports all AES key lengths
+### Build from source
 
-* AES_128
-* AES_192
-* AES_256
+```sh
+cmake -B build -DCMAKE_PREFIX_PATH=/path/to/Qt
+cmake --build build
+cmake --install build
+```
 
-#### Modes
-The class supports the following operating modes
+Enable optional features:
 
-* ECB
-* CBC
-* CFB
-* OFB
+```sh
+cmake -B build \
+  -DQTAES_ENABLE_AESNI=ON \    # Hardware AES-NI acceleration (ECB/CBC only)
+  -DQTAES_ENABLE_TESTS=ON \    # Build unit tests
+  -DQTAES_ENABLE_WERROR=ON     # Treat warnings as errors
+```
 
-#### Padding
-By default the padding method is `ISO`, however, the class supports:
+---
 
-* ZERO
-* PKCS7
-* ISO
+## API Reference
 
-### Example
-Sample code using a 128bit key in ECB mode
+### Instance methods
+
+| Method | Description |
+|--------|-------------|
+| `encode(rawText, key, iv)` | Encrypt `rawText` with `key`. `iv` required for CBC/CFB/OFB. |
+| `decode(rawText, key, iv)` | Decrypt `rawText` with `key`. `iv` required for CBC/CFB/OFB. |
+| `removePadding(rawText)` | Strip padding from a decrypted buffer. |
+| `expandKey(key, isEncryptionKey)` | Expand a raw key into the Rijndael key schedule. |
+
+### Static methods
+
+| Method | Description |
+|--------|-------------|
+| `QAESEncryption::Crypt(...)` | Static encrypt — no instance needed. |
+| `QAESEncryption::Decrypt(...)` | Static decrypt — no instance needed. |
+| `QAESEncryption::RemovePadding(...)` | Static padding removal. |
+| `QAESEncryption::ExpandKey(...)` | Static key expansion. |
+| `QAESEncryption::generateKey(password, salt, level, algo, iterations)` | Derive an AES-ready key via PBKDF2-HMAC (see below). |
+
+### Constructor
+
+```cpp
+QAESEncryption(Aes level, Mode mode, Padding padding = ISO);
+```
+
+<details>
+<summary><strong>Supported values</strong></summary>
+
+| Enum | Values |
+|------|--------|
+| `QAESEncryption::Aes` | `AES_128`, `AES_192`, `AES_256` |
+| `QAESEncryption::Mode` | `ECB`, `CBC`, `CFB`, `OFB` |
+| `QAESEncryption::Padding` | `ISO` (default), `PKCS7`, `ZERO` |
+
+</details>
+
+---
+
+## Usage Examples
+
+### Basic encrypt / decrypt
+
 ```cpp
 #include "qaesencryption.h"
 
 QAESEncryption encryption(QAESEncryption::AES_128, QAESEncryption::ECB);
-QByteArray encodedText = encryption.encode(plainText, key);
 
-QByteArray decodedText = encryption.decode(encodedText, key);
+QByteArray encoded = encryption.encode(plainText, key);
+QByteArray decoded = encryption.decode(encoded, key);
 ```
 
-#### Key derivation with salt (recommended)
-Use `generateKey()` to derive a key from a password and a random salt via PBKDF2.
-The salt must be stored alongside the ciphertext and must not be reused across encryptions.
+### Recommended: PBKDF2 key derivation with salt
+
+Use `generateKey()` to derive a secure key from a password and a random salt.
+Store the salt (and IV) alongside the ciphertext — they are not secret.
 
 ```cpp
 #include "qaesencryption.h"
 
 QAESEncryption encryption(QAESEncryption::AES_256, QAESEncryption::CBC, QAESEncryption::PKCS7);
 
-QString password("your-password");
-QByteArray salt = /* random 16+ bytes, e.g. from a CSPRNG */;
+QByteArray salt = /* random 16+ bytes from a CSPRNG */;
 QByteArray iv   = /* random 16 bytes */;
 
 QByteArray key = QAESEncryption::generateKey(password.toUtf8(), salt,
@@ -91,89 +123,88 @@ QByteArray key = QAESEncryption::generateKey(password.toUtf8(), salt,
 
 QByteArray cipherText = encryption.encode(plainText.toUtf8(), key, iv);
 
-// To decrypt (salt and iv must be stored/transmitted alongside cipherText):
-QByteArray derivedKey  = QAESEncryption::generateKey(password.toUtf8(), salt,
-                                                     QAESEncryption::AES_256);
-QByteArray decrypted   = encryption.removePadding(encryption.decode(cipherText, derivedKey, iv));
+// Decrypt — re-derive the same key from the stored salt:
+QByteArray key2     = QAESEncryption::generateKey(password.toUtf8(), salt,
+                                                  QAESEncryption::AES_256);
+QByteArray decrypted = encryption.removePadding(encryption.decode(cipherText, key2, iv));
 ```
 
-> **Note:** `generateKey()` uses Qt's `QMessageAuthenticationCode`, which is not guaranteed to be
-> constant-time. For security-critical applications prefer a dedicated library such as OpenSSL
-> (`PKCS5_PBKDF2_HMAC`) or libsodium.
+> [!NOTE]
+> `generateKey()` uses Qt's `QMessageAuthenticationCode`, which is not guaranteed to be
+> constant-time. For security-critical applications prefer a dedicated library such as
+> OpenSSL (`PKCS5_PBKDF2_HMAC`) or libsodium.
 
-#### Example for 256bit CBC using QString (raw hash — no salt)
+### CBC-256 with QString
+
 ```cpp
 #include <QCryptographicHash>
 #include "qaesencryption.h"
 
 QAESEncryption encryption(QAESEncryption::AES_256, QAESEncryption::CBC);
 
-QString inputStr("The Advanced Encryption Standard (AES), also known by its original name Rijndael "
-                 "is a specification for the encryption of electronic data established by the U.S. "
-                "National Institute of Standards and Technology (NIST) in 2001");
-QString key("your-string-key");
-QString iv("your-IV-vector");
-
 QByteArray hashKey = QCryptographicHash::hash(key.toLocal8Bit(), QCryptographicHash::Sha256);
-QByteArray hashIV  = QCryptographicHash::hash(iv.toLocal8Bit(), QCryptographicHash::Md5);
+QByteArray hashIV  = QCryptographicHash::hash(iv.toLocal8Bit(),  QCryptographicHash::Md5);
 
-QByteArray encodeText = encryption.encode(inputStr.toLocal8Bit(), hashKey, hashIV);
-QByteArray decodeText = encryption.decode(encodeText, hashKey, hashIV);
-
-QString decodedString = QString(encryption.removePadding(decodeText));
-
-//decodedString == inputStr !!
+QByteArray encoded  = encryption.encode(inputStr.toLocal8Bit(), hashKey, hashIV);
+QByteArray decoded  = encryption.decode(encoded, hashKey, hashIV);
+QString    result   = QString(encryption.removePadding(decoded));
 ```
 
-### Example via static invocation
-Static invocation without creating instances, 256 bit key, ECB mode, starting from *QString* text/key
+### Static invocation
+
 ```cpp
 #include <QCryptographicHash>
 #include "qaesencryption.h"
 
-QString inputStr("The Advanced Encryption Standard (AES), also known by its original name Rijndael "
-                 "is a specification for the encryption of electronic data established by the U.S. "
-                "National Institute of Standards and Technology (NIST) in 2001");
-QString key("your-string-key");
-QString iv("your-IV-vector");
-
 QByteArray hashKey = QCryptographicHash::hash(key.toLocal8Bit(), QCryptographicHash::Sha256);
-QByteArray hashIV  = QCryptographicHash::hash(iv.toLocal8Bit(), QCryptographicHash::Md5);
+QByteArray hashIV  = QCryptographicHash::hash(iv.toLocal8Bit(),  QCryptographicHash::Md5);
 
-// Static invocation
 QByteArray encrypted = QAESEncryption::Crypt(QAESEncryption::AES_256, QAESEncryption::CBC,
-                        inputStr.toLocal8Bit(), hashKey, hashIV);
-//...
-// Removal of padding via static function
-QString decodedString = QString(QAESEncryption::RemovePadding(decrypted));
+                                             inputStr.toLocal8Bit(), hashKey, hashIV);
+
+QString decrypted = QString(QAESEncryption::RemovePadding(
+                        QAESEncryption::Decrypt(QAESEncryption::AES_256, QAESEncryption::CBC,
+                                                encrypted, hashKey, hashIV)));
 ```
 
-## AES New Instructions Set
-To use the hardware acceleration provided by the AES New Instructions Set, enable the
-`QTAES_ENABLE_AESNI` CMake option (off by default):
-```
-cmake -DQTAES_ENABLE_AESNI=ON ...
-```
-If the CPU supports AES-NI the code will switch to use it automatically.
-AES-NI acceleration is available for ECB and CBC modes only.
+---
+
+## Thread Safety
+
+> [!WARNING]
+> **Instances are not thread-safe.** Each `QAESEncryption` object holds internal state written
+> during every operation. Do not share a single instance across threads without a mutex.
+>
+> The static methods (`Crypt`, `Decrypt`, `ExpandKey`, `RemovePadding`, `generateKey`) are safe
+> to call concurrently, as each creates an independent temporary instance.
+
+---
 
 ## Unit Testing
-The unit test vectors used are included in [NIST SP 800-38A](http://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38a.pdf).
-`generateKey()` is validated against the PBKDF2-HMAC-SHA256 vectors verified with Python's `hashlib.pbkdf2_hmac`.
 
-Please note that this code is not audited or AES-certified by any competent authority, use it at your own risk.
+Test vectors are taken from [NIST SP 800-38A](http://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38a.pdf).
+`generateKey()` is validated against five PBKDF2-HMAC-SHA256 vectors cross-checked with Python's `hashlib.pbkdf2_hmac`.
 
-## Dependencies
-* qtcore
+```sh
+cmake -B build -DQTAES_ENABLE_TESTS=ON -DCMAKE_PREFIX_PATH=/path/to/Qt
+cmake --build build
+ctest --test-dir build -V
+```
 
-No OpenSSL required.
+---
 
-## Contact
-Questions or suggestions are welcome!
-Please use the GitHub issue tracking to report suggestions or issues.
+## Disclaimer
+
+This code is **not audited or AES-certified** by any competent authority. Use it at your own risk.
+
+---
 
 ## License
-This software is provided under the [UNLICENSE](http://unlicense.org/)
 
-## Known Issues
-Please take a look at the list of currently open issues
+Released under the [Unlicense](http://unlicense.org/) — public domain, no restrictions.
+
+---
+
+<div align="center">
+Questions or suggestions? Open an issue on <a href="https://github.com/bricke/Qt-AES/issues">GitHub</a>.
+</div>
