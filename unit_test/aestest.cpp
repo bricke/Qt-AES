@@ -418,3 +418,59 @@ void AesTest::CBC256StringEvenPKCS7()
 
     QCOMPARE(padding.size(), blockLen);
 }
+
+// =================== AES-NI TESTS =========================
+// These tests only compile and run when QTAES_ENABLE_AESNI=ON.
+// They verify that the hardware path produces the same output as the
+// NIST SP 800-38A known-answer vectors used by the software-path tests,
+// confirming the two code paths are equivalent.
+
+#ifdef USE_INTEL_AES_IF_AVAILABLE
+void AesTest::AesNiECB128KnownAnswer()
+{
+    QAESEncryption encryption(QAESEncryption::AES_128, QAESEncryption::ECB);
+    QCOMPARE(encryption.encode(in, key16), outECB128);
+    QCOMPARE(encryption.decode(outECB128, key16), in);
+}
+
+void AesTest::AesNiECB192KnownAnswer()
+{
+    QAESEncryption encryption(QAESEncryption::AES_192, QAESEncryption::ECB);
+    QCOMPARE(encryption.encode(in, key24), outECB192);
+    QCOMPARE(encryption.decode(outECB192, key24), in);
+}
+
+void AesTest::AesNiECB256KnownAnswer()
+{
+    QAESEncryption encryption(QAESEncryption::AES_256, QAESEncryption::ECB);
+    QCOMPARE(encryption.encode(in, key32), outECB256);
+    QCOMPARE(encryption.decode(outECB256, key32), in);
+}
+
+void AesTest::AesNiCBC128KnownAnswer()
+{
+    QAESEncryption encryption(QAESEncryption::AES_128, QAESEncryption::CBC);
+    QCOMPARE(encryption.encode(inCBC128, key16, iv), outCBC128);
+    QCOMPARE(encryption.decode(outCBC128, key16, iv), inCBC128);
+}
+
+void AesTest::AesNiECB128RoundTrip()
+{
+    // Encrypt with AES-NI, then decrypt and verify recovery of original data.
+    QAESEncryption encryption(QAESEncryption::AES_256, QAESEncryption::ECB, QAESEncryption::PKCS7);
+    QByteArray plain("AES-NI ECB round-trip test data!");
+    QByteArray cipher = encryption.encode(plain, key32);
+    QByteArray decoded = encryption.removePadding(encryption.decode(cipher, key32));
+    QCOMPARE(decoded, plain);
+}
+
+void AesTest::AesNiCBC256RoundTrip()
+{
+    // Encrypt with AES-NI CBC-256, decrypt and verify recovery of original data.
+    QAESEncryption encryption(QAESEncryption::AES_256, QAESEncryption::CBC, QAESEncryption::PKCS7);
+    QByteArray plain("AES-NI CBC-256 round-trip test — hardware acceleration path.");
+    QByteArray cipher = encryption.encode(plain, key32, iv);
+    QByteArray decoded = encryption.removePadding(encryption.decode(cipher, key32, iv));
+    QCOMPARE(decoded, plain);
+}
+#endif

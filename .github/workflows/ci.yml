@@ -6,7 +6,7 @@ on:
 
 jobs:
   test:
-    name: Tests — Qt ${{ matrix.qt_version }} / ${{ matrix.os }}
+    name: Tests — Qt ${{ matrix.qt_version }} / ${{ matrix.os }}${{ matrix.aesni == 'ON' && ' / AES-NI' || '' }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -15,15 +15,23 @@ jobs:
           - os: ubuntu-latest
             qt_version: "6.7.0"
             qt_modules: ""
+            aesni: "OFF"
           - os: ubuntu-latest
             qt_version: "5.15.2"
             qt_modules: ""
+            aesni: "OFF"
           - os: windows-latest
             qt_version: "6.7.0"
             qt_modules: ""
+            aesni: "OFF"
           - os: macos-latest
             qt_version: "6.7.0"
             qt_modules: ""
+            aesni: "OFF"
+          - os: ubuntu-latest
+            qt_version: "6.7.0"
+            qt_modules: ""
+            aesni: "ON"
 
     steps:
       - name: Checkout
@@ -41,6 +49,7 @@ jobs:
           cmake -B build
           -DQTAES_ENABLE_TESTS=ON
           -DQTAES_ENABLE_WERROR=ON
+          -DQTAES_ENABLE_AESNI=${{ matrix.aesni }}
           -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
