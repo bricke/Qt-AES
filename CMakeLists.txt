@@ -59,6 +59,8 @@ endif()
 include(GenerateExportHeader)
 generate_export_header(QtAES EXPORT_MACRO_NAME QTAESSHARED_EXPORT)
 
+# Qt-style forwarding header — allows #include <QAESEncryption> (no .h extension,
+# consistent with Qt class headers like QByteArray, QObject, etc.)
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/QAESEncryption" "#include \"qaesencryption.h\"")
 
 target_sources(QtAES
