@@ -18,6 +18,17 @@
 #endif
 #endif
 
+/*!
+ * \class QAESEncryption
+ * \brief AES encryption/decryption for Qt supporting 128/192/256-bit keys and ECB, CBC, CFB, OFB modes.
+ *
+ * \note \b Thread safety: instances are \b not thread-safe. Each instance holds a raw pointer
+ *       (m_state) that is written to during every encrypt/decrypt operation, so a single instance
+ *       must not be used concurrently from multiple threads. Either use separate instances per
+ *       thread, or protect shared instances with a mutex. The static methods (Crypt, Decrypt,
+ *       ExpandKey, RemovePadding, generateKey) create a temporary instance internally and are
+ *       safe to call concurrently provided they are given independent arguments.
+ */
 class QTAESSHARED_EXPORT QAESEncryption : public QObject
 {
     Q_OBJECT
