@@ -224,6 +224,9 @@ QByteArray QAESEncryption::getPadding(int currSize, int alignment)
 
 QByteArray QAESEncryption::expandKey(const QByteArray &key, bool isEncryptionKey)
 {
+    // isEncryptionKey is only used by the AES-NI path; suppress the warning
+    // in software-only builds without removing the parameter from the public API.
+    Q_UNUSED(isEncryptionKey)
 
 #ifdef USE_INTEL_AES_IF_AVAILABLE
     if (m_aesNIAvailable){
