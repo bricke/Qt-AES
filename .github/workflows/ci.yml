@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: Tests — Qt ${{ matrix.qt_version }} / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            qt_version: "6.7.0"
+            qt_modules: ""
+          - os: ubuntu-latest
+            qt_version: "5.15.2"
+            qt_modules: ""
+          - os: windows-latest
+            qt_version: "6.7.0"
+            qt_modules: ""
+          - os: macos-latest
+            qt_version: "6.7.0"
+            qt_modules: ""
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ matrix.qt_version }}
+          modules: ${{ matrix.qt_modules }}
+          cache: true
+
+      - name: Configure
+        run: >
+          cmake -B build
+          -DQTAES_ENABLE_TESTS=ON
+          -DQTAES_ENABLE_WERROR=ON
+          -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --parallel --config Release
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure -C Release
