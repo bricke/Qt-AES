@@ -6,10 +6,11 @@ if(PROJECT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     set(QTAES_STANDALONE_BUILD ON)
 endif()
 
-option(QTAES_ENABLE_AESNI   "${PROJECT_NAME}: Enable AES-NI"            OFF)
-option(QTAES_ENABLE_INSTALL "${PROJECT_NAME}: Enable install"            ${QTAES_STANDALONE_BUILD})
-option(QTAES_ENABLE_TESTS   "${PROJECT_NAME}: Enable tests"              ${QTAES_STANDALONE_BUILD})
-option(QTAES_ENABLE_WERROR  "${PROJECT_NAME}: Treat warnings as errors"  OFF)
+option(QTAES_ENABLE_AESNI      "${PROJECT_NAME}: Enable AES-NI"                         OFF)
+option(QTAES_ENABLE_INSTALL    "${PROJECT_NAME}: Enable install"                         ${QTAES_STANDALONE_BUILD})
+option(QTAES_ENABLE_TESTS      "${PROJECT_NAME}: Enable tests"                           ${QTAES_STANDALONE_BUILD})
+option(QTAES_ENABLE_WERROR     "${PROJECT_NAME}: Treat warnings as errors"               OFF)
+option(QTAES_ENABLE_SANITIZERS "${PROJECT_NAME}: Enable AddressSanitizer + UBSan"        OFF)
 
 # GNUInstallDirs is needed for CMAKE_INSTALL_* variables used in
 # target_include_directories and the install() calls below.
@@ -114,6 +115,15 @@ target_link_libraries(QtAES
     PUBLIC
         ${QT_PACKAGE_NAME}::Core)
 
+if(QTAES_ENABLE_SANITIZERS)
+    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        message(FATAL_ERROR "QTAES_ENABLE_SANITIZERS requires GCC or Clang.")
+    endif()
+    set(_QTAES_SAN_FLAGS -fsanitize=address,undefined -fno-omit-frame-pointer)
+    # Compile flags go on the library so object files are instrumented.
+    target_compile_options(QtAES PRIVATE ${_QTAES_SAN_FLAGS})
+endif()
+
 if(QTAES_ENABLE_TESTS)
     enable_testing()
 
@@ -134,6 +144,12 @@ if(QTAES_ENABLE_TESTS)
         PRIVATE
             QtAES
             ${QT_PACKAGE_NAME}::Test)
+
+    if(QTAES_ENABLE_SANITIZERS)
+        # Compile flags for test sources; link flags for the final executable.
+        target_compile_options(AESTest PRIVATE ${_QTAES_SAN_FLAGS})
+        target_link_options(AESTest PRIVATE ${_QTAES_SAN_FLAGS})
+    endif()
 
     add_test(
         NAME AESTest

@@ -59,10 +59,12 @@ public:
      * \param key:      user-key (key.size either 128, 192, 256 bits depending on AES::Aes)
      * \param iv:       initialisation-vector (iv.size is 128 bits (16 Bytes))
      * \param padding:  AES::Padding standard
+     * \param ok:       if non-null, set to true on success or false if key/IV/alignment is invalid
      * \return encrypted cipher
      */
     static QByteArray Crypt(QAESEncryption::Aes level, QAESEncryption::Mode mode, const QByteArray &rawText, const QByteArray &key,
-                            const QByteArray &iv = QByteArray(), QAESEncryption::Padding padding = QAESEncryption::ISO);
+                            const QByteArray &iv = QByteArray(), QAESEncryption::Padding padding = QAESEncryption::ISO,
+                            bool *ok = nullptr);
     /*!
      * \brief static method call to decrypt data given by rawText
      * \param level:    AES::Aes level
@@ -71,10 +73,12 @@ public:
      * \param key:      user-key (key.size either 128, 192, 256 bits depending on AES::Aes)
      * \param iv:       initialisation-vector (iv.size is 128 bits (16 Bytes))
      * \param padding:  AES::Padding standard
+     * \param ok:       if non-null, set to true on success or false if key/IV/alignment is invalid
      * \return decrypted cipher with padding
      */
     static QByteArray Decrypt(QAESEncryption::Aes level, QAESEncryption::Mode mode, const QByteArray &rawText, const QByteArray &key,
-                              const QByteArray &iv = QByteArray(), QAESEncryption::Padding padding = QAESEncryption::ISO);
+                              const QByteArray &iv = QByteArray(), QAESEncryption::Padding padding = QAESEncryption::ISO,
+                              bool *ok = nullptr);
     /*!
      * \brief static method call to expand the user key to fit the encrypting/decrypting algorithm
      * \param level:            AES::Aes level
@@ -92,7 +96,8 @@ public:
      * \param padding:  AES::Padding standard
      * \return decrypted cipher with padding removed
      */
-    static QByteArray RemovePadding(const QByteArray &rawText, QAESEncryption::Padding padding = QAESEncryption::ISO);
+    static QByteArray RemovePadding(const QByteArray &rawText, QAESEncryption::Padding padding = QAESEncryption::ISO,
+                                    bool *ok = nullptr);
 
     /*!
      * \brief Derives an AES-ready key from a password and salt using PBKDF2 (RFC 2898).
@@ -127,7 +132,8 @@ public:
      * \param iv:       initialisation-vector (iv.size is 128 bits (16 Bytes))
      * \return encrypted cipher
      */
-    QByteArray encode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv = QByteArray());
+    QByteArray encode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv = QByteArray(),
+                      bool *ok = nullptr);
 
     /*!
      * \brief object method call to decrypt data given by rawText
@@ -137,7 +143,8 @@ public:
      * \param padding:  AES::Padding standard
      * \return decrypted cipher with padding
      */
-    QByteArray decode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv = QByteArray());
+    QByteArray decode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv = QByteArray(),
+                      bool *ok = nullptr);
 
     /*!
      * \brief object method call to expand the user key to fit the encrypting/decrypting algorithm
@@ -152,7 +159,7 @@ public:
      * \param rawText:  inputText
      * \return decrypted cipher with padding removed
      */
-    QByteArray removePadding(const QByteArray &rawText);
+    QByteArray removePadding(const QByteArray &rawText, bool *ok = nullptr);
 
     QByteArray printArray(uchar *arr, int size);
 Q_SIGNALS:

@@ -469,6 +469,88 @@ void AesTest::PKCS7RemovePaddingTooLarge()
     QCOMPARE(result, data);
 }
 
+// =================== OK PARAMETER TESTS ================
+
+void AesTest::OkParamEncodeSuccess()
+{
+    QAESEncryption enc(QAESEncryption::AES_128, QAESEncryption::ECB);
+    bool ok = false;
+    QByteArray result = enc.encode(QByteArray("1234567890123456"), key16, QByteArray(), &ok);
+    QVERIFY(ok);
+    QVERIFY(!result.isEmpty());
+}
+
+void AesTest::OkParamEncodeWrongKeySize()
+{
+    QAESEncryption enc(QAESEncryption::AES_256, QAESEncryption::ECB);
+    bool ok = true;
+    // key16 is 16 bytes — wrong for AES-256 which requires 32.
+    QByteArray result = enc.encode(QByteArray("1234567890123456"), key16, QByteArray(), &ok);
+    QVERIFY(!ok);
+    QVERIFY(result.isEmpty());
+}
+
+void AesTest::OkParamEncodeMissingIV()
+{
+    QAESEncryption enc(QAESEncryption::AES_128, QAESEncryption::CBC);
+    bool ok = true;
+    // CBC requires an IV; passing none should fail.
+    QByteArray result = enc.encode(QByteArray("1234567890123456"), key16, QByteArray(), &ok);
+    QVERIFY(!ok);
+    QVERIFY(result.isEmpty());
+}
+
+void AesTest::OkParamDecodeSuccess()
+{
+    QAESEncryption enc(QAESEncryption::AES_128, QAESEncryption::ECB);
+    bool encOk = false;
+    QByteArray cipher = enc.encode(QByteArray("1234567890123456"), key16, QByteArray(), &encOk);
+    QVERIFY(encOk);
+
+    bool decOk = false;
+    QByteArray result = enc.decode(cipher, key16, QByteArray(), &decOk);
+    QVERIFY(decOk);
+    QVERIFY(!result.isEmpty());
+}
+
+void AesTest::OkParamDecodeWrongKeySize()
+{
+    QAESEncryption enc(QAESEncryption::AES_256, QAESEncryption::ECB);
+    bool ok = true;
+    QByteArray result = enc.decode(QByteArray(32, '\x00'), key16, QByteArray(), &ok);
+    QVERIFY(!ok);
+    QVERIFY(result.isEmpty());
+}
+
+void AesTest::OkParamDecodeUnaligned()
+{
+    // Non-block-aligned ciphertext for a block mode must fail.
+    QAESEncryption enc(QAESEncryption::AES_128, QAESEncryption::CBC);
+    bool ok = true;
+    QByteArray result = enc.decode(QByteArray(17, '\x00'), key16, iv, &ok);
+    QVERIFY(!ok);
+    QVERIFY(result.isEmpty());
+}
+
+void AesTest::OkParamRemovePaddingValid()
+{
+    QByteArray data("Hello!!!");
+    data.append(QByteArray(8, '\x08')); // valid PKCS7: 8 bytes of 0x08
+    bool ok = false;
+    QByteArray result = QAESEncryption::RemovePadding(data, QAESEncryption::PKCS7, &ok);
+    QVERIFY(ok);
+    QCOMPARE(result, QByteArray("Hello!!!"));
+}
+
+void AesTest::OkParamRemovePaddingInvalid()
+{
+    QByteArray data("Hello!!!");
+    data.append('\x05'); // padLen=5 but only 1 byte — invalid PKCS7
+    bool ok = true;
+    QAESEncryption::RemovePadding(data, QAESEncryption::PKCS7, &ok);
+    QVERIFY(!ok);
+}
+
 // =================== CTR TESTS =========================
 // Test vectors from NIST SP 800-38A, Appendix F.5.
 // Counter increment: 128-bit big-endian (byte[15] is least significant).

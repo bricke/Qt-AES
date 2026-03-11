@@ -1,0 +1,42 @@
+name: CI (Sanitizers)
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  sanitizers:
+    name: ASan + UBSan — Qt ${{ matrix.qt_version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - qt_version: "6.7.0"
+          - qt_version: "5.15.2"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ matrix.qt_version }}
+          cache: true
+
+      - name: Configure
+        run: >
+          cmake -B build
+          -DQTAES_ENABLE_TESTS=ON
+          -DQTAES_ENABLE_SANITIZERS=ON
+          -DCMAKE_BUILD_TYPE=Debug
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Test
+        env:
+          ASAN_OPTIONS: halt_on_error=1:detect_leaks=0
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: ctest --test-dir build --output-on-failure
