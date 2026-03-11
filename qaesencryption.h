@@ -52,7 +52,8 @@ public:
     enum Padding {
       ZERO,
       PKCS7,
-      ISO
+      ISO,
+      NONE  ///< No padding — valid only for CFB and OFB (stream cipher modes); allows arbitrary-length plaintext.
     };
 
     /*!

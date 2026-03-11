@@ -827,3 +827,43 @@ void AesTest::AesNiOFB256RoundTrip()
     QCOMPARE(decoded, plain);
 }
 #endif
+
+// =================== NONE PADDING — STREAM CIPHER MODES ================
+
+void AesTest::CFBNoPaddingPartialBlock()
+{
+    // 7-byte plaintext — not block-aligned. NONE padding must round-trip exactly.
+    QAESEncryption enc(QAESEncryption::AES_128, QAESEncryption::CFB, QAESEncryption::NONE);
+    QByteArray plain("Hello!!");  // 7 bytes
+    QByteArray cipherText = enc.encode(plain, key16, iv);
+    QVERIFY(!cipherText.isEmpty());
+    QCOMPARE(cipherText.size(), plain.size());  // ciphertext must be same length as plaintext
+    QCOMPARE(enc.decode(cipherText, key16, iv), plain);
+}
+
+void AesTest::OFBNoPaddingPartialBlock()
+{
+    // 13-byte plaintext — not block-aligned. NONE padding must round-trip exactly.
+    QAESEncryption enc(QAESEncryption::AES_256, QAESEncryption::OFB, QAESEncryption::NONE);
+    QByteArray plain("Hello, World!");  // 13 bytes
+    QByteArray cipherText = enc.encode(plain, key32, iv);
+    QVERIFY(!cipherText.isEmpty());
+    QCOMPARE(cipherText.size(), plain.size());
+    QCOMPARE(enc.decode(cipherText, key32, iv), plain);
+}
+
+void AesTest::NoPaddingRejectedForECB()
+{
+    // ECB requires block-aligned input; NONE + unaligned must be rejected.
+    QAESEncryption enc(QAESEncryption::AES_128, QAESEncryption::ECB, QAESEncryption::NONE);
+    QByteArray plain("unaligned");  // 9 bytes — not a multiple of 16
+    QVERIFY(enc.encode(plain, key16).isEmpty());
+}
+
+void AesTest::NoPaddingRejectedForCBC()
+{
+    // CBC requires block-aligned input; NONE + unaligned must be rejected.
+    QAESEncryption enc(QAESEncryption::AES_256, QAESEncryption::CBC, QAESEncryption::NONE);
+    QByteArray plain("short");  // 5 bytes
+    QVERIFY(enc.encode(plain, key32, iv).isEmpty());
+}
