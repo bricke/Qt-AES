@@ -604,8 +604,9 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
     // NONE padding is only valid for stream cipher modes (CFB, OFB, CTR).
     // ECB and CBC require block-aligned input; reject unaligned input early.
     if (m_padding == Padding::NONE && (m_mode == ECB || m_mode == CBC)
-            && rawText.size() % m_blocklen != 0)
+            && rawText.size() % m_blocklen != 0) {
         return QByteArray();
+    }
 
         QByteArray expandedKey = expandKey(key, true);
         QByteArray alignedText(rawText);
