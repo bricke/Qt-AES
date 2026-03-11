@@ -95,10 +95,12 @@ if(QTAES_ENABLE_AESNI)
             aesni/aesni-key-init.h
             aesni/aesni-enc-ecb.h
             aesni/aesni-enc-cbc.h
+            aesni/aesni-enc-cfb.h
+            aesni/aesni-enc-ofb.h
             aesni/aesni-enc-ctr.h)
 
     target_compile_definitions(QtAES
-        PRIVATE
+        PUBLIC
             USE_INTEL_AES_IF_AVAILABLE)
 
     check_cxx_compiler_flag(-maes CXX_COMPILER_HAS_FLAG_MAES)

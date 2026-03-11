@@ -616,4 +616,64 @@ void AesTest::AesNiCBC256RoundTrip()
     QByteArray decoded = encryption.removePadding(encryption.decode(cipher, key32, iv));
     QCOMPARE(decoded, plain);
 }
+
+void AesTest::AesNiCFB128KnownAnswer()
+{
+    // NIST SP 800-38A, F.3.13 — CFB128-AES128 Encrypt (first two blocks).
+    // IV: 000102030405060708090a0b0c0d0e0f
+    // Key: 2b7e151628aed2a6abf7158809cf4f3c
+    // P1: 6bc1bee22e409f96e93d7e117393172a  C1: 3b3fd92eb72dad20333449f8e83cfb4a
+    // P2: ae2d8a571e03ac9c9eb76fac45af8e51  C2: c8a64537a0b3a93fcde3cdad9f1ce58b
+    QByteArray nistKey  = QByteArray::fromHex("2b7e151628aed2a6abf7158809cf4f3c");
+    QByteArray nistIv   = QByteArray::fromHex("000102030405060708090a0b0c0d0e0f");
+    QByteArray pt       = QByteArray::fromHex("6bc1bee22e409f96e93d7e117393172a"
+                                               "ae2d8a571e03ac9c9eb76fac45af8e51");
+    QByteArray expected = QByteArray::fromHex("3b3fd92eb72dad20333449f8e83cfb4a"
+                                               "c8a64537a0b3a93fcde3cdad9f1ce58b");
+
+    QAESEncryption enc(QAESEncryption::AES_128, QAESEncryption::CFB);
+    QCOMPARE(enc.encode(pt, nistKey, nistIv), expected);
+    QCOMPARE(enc.decode(expected, nistKey, nistIv), pt);
+}
+
+void AesTest::AesNiCFB256RoundTrip()
+{
+    // Encrypt with AES-NI CFB-256, decrypt and verify round-trip.
+    QAESEncryption encryption(QAESEncryption::AES_256, QAESEncryption::CFB, QAESEncryption::PKCS7);
+    QByteArray plain("AES-NI CFB-256 round-trip test — hardware acceleration path.");
+    QByteArray nonce = QByteArray::fromHex("000102030405060708090a0b0c0d0e0f");
+    QByteArray cipherText = encryption.encode(plain, key32, nonce);
+    QByteArray decoded = encryption.removePadding(encryption.decode(cipherText, key32, nonce));
+    QCOMPARE(decoded, plain);
+}
+
+void AesTest::AesNiOFB128KnownAnswer()
+{
+    // NIST SP 800-38A, F.4.1 — OFB-AES128 Encrypt (first two blocks).
+    // IV: 000102030405060708090a0b0c0d0e0f
+    // Key: 2b7e151628aed2a6abf7158809cf4f3c
+    // P1: 6bc1bee22e409f96e93d7e117393172a  C1: 3b3fd92eb72dad20333449f8e83cfb4a
+    // P2: ae2d8a571e03ac9c9eb76fac45af8e51  C2: 7789508d16918f03f53c52dac54ed825
+    QByteArray nistKey  = QByteArray::fromHex("2b7e151628aed2a6abf7158809cf4f3c");
+    QByteArray nistIv   = QByteArray::fromHex("000102030405060708090a0b0c0d0e0f");
+    QByteArray pt       = QByteArray::fromHex("6bc1bee22e409f96e93d7e117393172a"
+                                               "ae2d8a571e03ac9c9eb76fac45af8e51");
+    QByteArray expected = QByteArray::fromHex("3b3fd92eb72dad20333449f8e83cfb4a"
+                                               "7789508d16918f03f53c52dac54ed825");
+
+    QAESEncryption enc(QAESEncryption::AES_128, QAESEncryption::OFB);
+    QCOMPARE(enc.encode(pt, nistKey, nistIv), expected);
+    QCOMPARE(enc.decode(expected, nistKey, nistIv), pt);
+}
+
+void AesTest::AesNiOFB256RoundTrip()
+{
+    // Encrypt with AES-NI OFB-256, decrypt and verify round-trip.
+    QAESEncryption encryption(QAESEncryption::AES_256, QAESEncryption::OFB, QAESEncryption::PKCS7);
+    QByteArray plain("AES-NI OFB-256 round-trip test — hardware acceleration path.");
+    QByteArray nonce = QByteArray::fromHex("000102030405060708090a0b0c0d0e0f");
+    QByteArray cipherText = encryption.encode(plain, key32, nonce);
+    QByteArray decoded = encryption.removePadding(encryption.decode(cipherText, key32, nonce));
+    QCOMPARE(decoded, plain);
+}
 #endif

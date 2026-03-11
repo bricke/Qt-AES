@@ -71,6 +71,11 @@ private slots:
     void AesNiCBC128KnownAnswer();
     void AesNiECB128RoundTrip();
     void AesNiCBC256RoundTrip();
+
+    void AesNiCFB128KnownAnswer();
+    void AesNiCFB256RoundTrip();
+    void AesNiOFB128KnownAnswer();
+    void AesNiOFB256RoundTrip();
 #endif
 
     void cleanupTestCase(){}
