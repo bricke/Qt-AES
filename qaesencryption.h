@@ -22,12 +22,10 @@
  * \class QAESEncryption
  * \brief AES encryption/decryption for Qt supporting 128/192/256-bit keys and ECB, CBC, CFB, OFB, CTR modes.
  *
- * \note \b Thread safety: instances are \b not thread-safe. Each instance holds a raw pointer
- *       (m_state) that is written to during every encrypt/decrypt operation, so a single instance
- *       must not be used concurrently from multiple threads. Either use separate instances per
- *       thread, or protect shared instances with a mutex. The static methods (Crypt, Decrypt,
- *       ExpandKey, RemovePadding, generateKey) create a temporary instance internally and are
- *       safe to call concurrently provided they are given independent arguments.
+ * \note \b Thread safety: instances are thread-safe for concurrent encode/decode calls.
+ *       All mutable state during an operation is kept on the call stack; no member variables
+ *       are written after construction. The static methods (Crypt, Decrypt, ExpandKey,
+ *       RemovePadding, generateKey) are also safe to call concurrently.
  */
 class QTAESSHARED_EXPORT QAESEncryption : public QObject
 {
@@ -172,7 +170,6 @@ private:
     int m_expandedKey;
     int m_padding;
     bool m_aesNIAvailable;
-    QByteArray* m_state;
 
     struct AES256{
         int nk = 8;
@@ -201,13 +198,13 @@ private:
     quint8 getSBoxValue(quint8 num){return sbox[num];}
     quint8 getSBoxInvert(quint8 num){return rsbox[num];}
 
-    void addRoundKey(const quint8 round, const QByteArray &expKey);
-    void subBytes();
-    void shiftRows();
-    void mixColumns();
-    void invMixColumns();
-    void invSubBytes();
-    void invShiftRows();
+    void addRoundKey(QByteArray &state, const quint8 round, const QByteArray &expKey);
+    void subBytes(QByteArray &state);
+    void shiftRows(QByteArray &state);
+    void mixColumns(QByteArray &state);
+    void invMixColumns(QByteArray &state);
+    void invSubBytes(QByteArray &state);
+    void invShiftRows(QByteArray &state);
     QByteArray getPadding(int currSize, int alignment);
     QByteArray cipher(const QByteArray &expKey, const QByteArray &in);
     QByteArray invCipher(const QByteArray &expKey, const QByteArray &in);

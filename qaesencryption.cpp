@@ -156,7 +156,7 @@ quint8 multiply(quint8 x, quint8 y)
 QAESEncryption::QAESEncryption(Aes level, Mode mode,
                                Padding padding)
     : m_nb(4), m_blocklen(16), m_level(level), m_mode(mode), m_padding(padding)
-    , m_aesNIAvailable(false), m_state(nullptr)
+    , m_aesNIAvailable(false)
 {
 #ifdef USE_INTEL_AES_IF_AVAILABLE
     m_aesNIAvailable = check_aesni_support();
@@ -341,18 +341,18 @@ QByteArray QAESEncryption::expandKey(const QByteArray &key, bool isEncryptionKey
 
 // This function adds the round key to state.
 // The round key is added to the state by an XOR function.
-void QAESEncryption::addRoundKey(const quint8 round, const QByteArray &expKey)
+void QAESEncryption::addRoundKey(QByteArray &state, const quint8 round, const QByteArray &expKey)
 {
-  QByteArray::iterator it = m_state->begin();
+  QByteArray::iterator it = state.begin();
   for(int i=0; i < 16; ++i)
       it[i] = (quint8) it[i] ^ (quint8) expKey.at(round * m_nb * 4 + (i/4) * m_nb + (i%4));
 }
 
 // The SubBytes Function Substitutes the values in the
 // state matrix with values in an S-box.
-void QAESEncryption::subBytes()
+void QAESEncryption::subBytes(QByteArray &state)
 {
-  QByteArray::iterator it = m_state->begin();
+  QByteArray::iterator it = state.begin();
   for(int i = 0; i < 16; i++)
     it[i] = getSBoxValue((quint8) it[i]);
 }
@@ -360,9 +360,9 @@ void QAESEncryption::subBytes()
 // The ShiftRows() function shifts the rows in the state to the left.
 // Each row is shifted with different offset.
 // Offset = Row number. So the first row is not shifted.
-void QAESEncryption::shiftRows()
+void QAESEncryption::shiftRows(QByteArray &state)
 {
-    QByteArray::iterator it = m_state->begin();
+    QByteArray::iterator it = state.begin();
     quint8 temp;
     //Keep in mind that QByteArray is column-driven!!
 
@@ -391,9 +391,9 @@ void QAESEncryption::shiftRows()
 
 // MixColumns function mixes the columns of the state matrix
 //optimized!!
-void QAESEncryption::mixColumns()
+void QAESEncryption::mixColumns(QByteArray &state)
 {
-  QByteArray::iterator it = m_state->begin();
+  QByteArray::iterator it = state.begin();
   quint8 tmp, tm, t;
 
   for(int i = 0; i < 16; i += 4){
@@ -417,9 +417,9 @@ void QAESEncryption::mixColumns()
 // MixColumns function mixes the columns of the state matrix.
 // The method used to multiply may be difficult to understand for the inexperienced.
 // Please use the references to gain more information.
-void QAESEncryption::invMixColumns()
+void QAESEncryption::invMixColumns(QByteArray &state)
 {
-  QByteArray::iterator it = m_state->begin();
+  QByteArray::iterator it = state.begin();
   quint8 a,b,c,d;
   for(int i = 0; i < 16; i+=4){
     a = (quint8) it[i];
@@ -436,16 +436,16 @@ void QAESEncryption::invMixColumns()
 
 // The SubBytes Function Substitutes the values in the
 // state matrix with values in an S-box.
-void QAESEncryption::invSubBytes()
+void QAESEncryption::invSubBytes(QByteArray &state)
 {
-    QByteArray::iterator it = m_state->begin();
+    QByteArray::iterator it = state.begin();
     for(int i = 0; i < 16; ++i)
         it[i] = getSBoxInvert((quint8) it[i]);
 }
 
-void QAESEncryption::invShiftRows()
+void QAESEncryption::invShiftRows(QByteArray &state)
 {
-    QByteArray::iterator it = m_state->begin();
+    QByteArray::iterator it = state.begin();
     uint8_t temp;
 
     //Keep in mind that QByteArray is column-driven!!
@@ -489,59 +489,58 @@ QByteArray QAESEncryption::byteXor(const QByteArray &a, const QByteArray &b)
 // Cipher is the main function that encrypts the PlainText.
 QByteArray QAESEncryption::cipher(const QByteArray &expKey, const QByteArray &in)
 {
-
-  //m_state is the input buffer...
-  QByteArray output(in);
-  m_state = &output;
+  // State is kept entirely on the stack — no shared mutable member, making
+  // concurrent calls on the same instance safe.
+  QByteArray state(in);
 
   // Add the First round key to the state before starting the rounds.
-  addRoundKey(0, expKey);
+  addRoundKey(state, 0, expKey);
 
   // There will be Nr rounds.
   // The first Nr-1 rounds are identical.
   // These Nr-1 rounds are executed in the loop below.
   for(quint8 round = 1; round < m_nr; ++round){
-    subBytes();
-    shiftRows();
-    mixColumns();
-    addRoundKey(round, expKey);
+    subBytes(state);
+    shiftRows(state);
+    mixColumns(state);
+    addRoundKey(state, round, expKey);
   }
 
   // The last round is given below.
   // The MixColumns function is not here in the last round.
-  subBytes();
-  shiftRows();
-  addRoundKey(m_nr, expKey);
+  subBytes(state);
+  shiftRows(state);
+  addRoundKey(state, m_nr, expKey);
 
-  return output;
+  return state;
 }
 
 QByteArray QAESEncryption::invCipher(const QByteArray &expKey, const QByteArray &in)
 {
-    //m_state is the input buffer.... handle it!
-    QByteArray output(in);
-    m_state = &output;
+    // State is kept entirely on the stack — no shared mutable member, making
+    // concurrent calls on the same instance safe.
+    QByteArray state(in);
 
     // Add the First round key to the state before starting the rounds.
-    addRoundKey(m_nr, expKey);
+    addRoundKey(state, m_nr, expKey);
 
     // There will be Nr rounds.
     // The first Nr-1 rounds are identical.
     // These Nr-1 rounds are executed in the loop below.
     for(quint8 round=m_nr-1; round>0 ; round--){
-        invShiftRows();
-        invSubBytes();
-        addRoundKey(round, expKey);
-        invMixColumns();
+        invShiftRows(state);
+        invSubBytes(state);
+        addRoundKey(state, round, expKey);
+        invMixColumns(state);
     }
 
     // The last round is given below.
     // The MixColumns function is not here in the last round.
-    invShiftRows();
-    invSubBytes();
-    addRoundKey(0, expKey);
+    invShiftRows(state);
+    invSubBytes(state);
+    addRoundKey(state, 0, expKey);
 
-    return output;
+    return state;
 }
 
 QByteArray QAESEncryption::printArray(uchar* arr, int size)

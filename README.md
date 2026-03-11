@@ -196,12 +196,9 @@ QString decrypted = QString(QAESEncryption::RemovePadding(
 
 ## Thread Safety
 
-> [!WARNING]
-> **Instances are not thread-safe.** Each `QAESEncryption` object holds internal state written
-> during every operation. Do not share a single instance across threads without a mutex.
->
-> The static methods (`Crypt`, `Decrypt`, `ExpandKey`, `RemovePadding`, `generateKey`) are safe
-> to call concurrently, as each creates an independent temporary instance.
+Instances are thread-safe. All mutable state during an `encode()` / `decode()` operation is kept on the call stack — no member variables are written after construction. Multiple threads may safely call `encode()` or `decode()` on the same instance concurrently without a mutex.
+
+The static methods (`Crypt`, `Decrypt`, `ExpandKey`, `RemovePadding`, `generateKey`) are also safe to call concurrently.
 
 ---
 
