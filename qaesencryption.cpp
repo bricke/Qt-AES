@@ -8,6 +8,8 @@
 #include "aesni/aesni-key-init.h"
 #include "aesni/aesni-enc-ecb.h"
 #include "aesni/aesni-enc-cbc.h"
+#include "aesni/aesni-enc-cfb.h"
+#include "aesni/aesni-enc-ofb.h"
 #include "aesni/aesni-enc-ctr.h"
 #endif
 
@@ -655,6 +657,22 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
     }
     break;
     case CFB: {
+#ifdef USE_INTEL_AES_IF_AVAILABLE
+        if (m_aesNIAvailable) {
+            quint8 ivec[16];
+            memcpy(ivec, iv.data(), iv.size());
+            char expKey[240];
+            memcpy(expKey, expandedKey.data(), expandedKey.size());
+            result.resize(alignedText.size());
+            AES_CFB_encrypt((unsigned char*) alignedText.constData(),
+                            (unsigned char*) result.data(),
+                            ivec,
+                            alignedText.size(),
+                            expKey,
+                            m_nr);
+            break;
+        }
+#endif
         result.append(byteXor(alignedText.left(m_blocklen), cipher(expandedKey, iv)));
         for(int i=0; i < alignedText.size(); i+= m_blocklen) {
             if (i+m_blocklen < alignedText.size())
@@ -664,6 +682,22 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
     }
     break;
     case OFB: {
+#ifdef USE_INTEL_AES_IF_AVAILABLE
+        if (m_aesNIAvailable) {
+            quint8 ivec[16];
+            memcpy(ivec, iv.data(), iv.size());
+            char expKey[240];
+            memcpy(expKey, expandedKey.data(), expandedKey.size());
+            result.resize(alignedText.size());
+            AES_OFB_xcrypt((unsigned char*) alignedText.constData(),
+                           (unsigned char*) result.data(),
+                           ivec,
+                           alignedText.size(),
+                           expKey,
+                           m_nr);
+            break;
+        }
+#endif
         QByteArray ofbTemp;
         ofbTemp.append(cipher(expandedKey, iv));
         for (int i=m_blocklen; i < alignedText.size(); i += m_blocklen){
@@ -789,6 +823,22 @@ QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &k
         }
         break;
     case CFB: {
+#ifdef USE_INTEL_AES_IF_AVAILABLE
+        if (m_aesNIAvailable) {
+            quint8 ivec[16];
+            memcpy(ivec, iv.constData(), iv.size());
+            char expKey[240];
+            memcpy(expKey, expandedKey.data(), expandedKey.size());
+            ret.resize(rawText.size());
+            AES_CFB_decrypt((unsigned char*) rawText.constData(),
+                            (unsigned char*) ret.data(),
+                            ivec,
+                            rawText.size(),
+                            expKey,
+                            m_nr);
+            break;
+        }
+#endif
             ret.append(byteXor(rawText.mid(0, m_blocklen), cipher(expandedKey, iv)));
             for(int i=0; i < rawText.size(); i+= m_blocklen){
                 if (i+m_blocklen < rawText.size()) {
@@ -799,6 +849,22 @@ QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &k
         }
         break;
     case OFB: {
+#ifdef USE_INTEL_AES_IF_AVAILABLE
+        if (m_aesNIAvailable) {
+            quint8 ivec[16];
+            memcpy(ivec, iv.constData(), iv.size());
+            char expKey[240];
+            memcpy(expKey, expandedKey.data(), expandedKey.size());
+            ret.resize(rawText.size());
+            AES_OFB_xcrypt((unsigned char*) rawText.constData(),
+                           (unsigned char*) ret.data(),
+                           ivec,
+                           rawText.size(),
+                           expKey,
+                           m_nr);
+            break;
+        }
+#endif
         QByteArray ofbTemp;
         ofbTemp.append(cipher(expandedKey, iv));
         for (int i=m_blocklen; i < rawText.size(); i += m_blocklen){

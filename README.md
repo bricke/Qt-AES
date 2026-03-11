@@ -218,10 +218,10 @@ On x86/x86-64 CPUs that support the AES-NI instruction set, Qt-AES can use nativ
 | ECB  | ✅ | ✅ |
 | CBC  | ✅ | ✅ |
 | CTR  | ✅ | ✅ |
-| CFB  | — | — |
-| OFB  | — | — |
+| CFB  | ✅ | ✅ |
+| OFB  | ✅ | ✅ |
 
-CFB and OFB fall back to the software path transparently.
+All five modes are hardware-accelerated. CFB and OFB use the forward AES cipher for both encrypt and decrypt (as the standard requires), so they take the encryption key schedule in both directions.
 
 ### Enabling AES-NI
 
