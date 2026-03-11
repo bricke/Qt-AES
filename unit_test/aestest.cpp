@@ -419,6 +419,56 @@ void AesTest::CBC256StringEvenPKCS7()
     QCOMPARE(padding.size(), blockLen);
 }
 
+// =================== PKCS7 PADDING VALIDATION TESTS ====
+
+void AesTest::PKCS7RemovePaddingValid()
+{
+    // Build a block with valid PKCS7 padding: 4 bytes of \x04
+    QByteArray data("Hello!!!");        // 8 bytes
+    data.append(QByteArray(4, '\x04')); // 4-byte PKCS7 pad → 12 bytes total
+    QByteArray result = QAESEncryption::RemovePadding(data, QAESEncryption::PKCS7);
+    QCOMPARE(result, QByteArray("Hello!!!"));
+}
+
+void AesTest::PKCS7RemovePaddingWrongLastByte()
+{
+    // Last byte says padding length = 3 but it doesn't match the preceding bytes.
+    QByteArray data("Hello!!!");
+    data.append('\x05'); // padLen = 5 but only 1 byte appended — wrong
+    // RemovePadding must NOT strip anything; buffer returned unchanged.
+    QByteArray result = QAESEncryption::RemovePadding(data, QAESEncryption::PKCS7);
+    QCOMPARE(result, data);
+}
+
+void AesTest::PKCS7RemovePaddingInconsistentBytes()
+{
+    // Last byte says 4, but preceding bytes are not all \x04.
+    QByteArray data("Hello!!!");
+    data.append('\x01');
+    data.append('\x02');
+    data.append('\x03');
+    data.append('\x04'); // padLen = 4, but bytes are 01 02 03 04 — invalid
+    QByteArray result = QAESEncryption::RemovePadding(data, QAESEncryption::PKCS7);
+    QCOMPARE(result, data);
+}
+
+void AesTest::PKCS7RemovePaddingZeroLength()
+{
+    // padLen == 0 is invalid PKCS7 (value must be 1–16).
+    QByteArray data("Hello!!!");
+    data.append('\x00');
+    QByteArray result = QAESEncryption::RemovePadding(data, QAESEncryption::PKCS7);
+    QCOMPARE(result, data);
+}
+
+void AesTest::PKCS7RemovePaddingTooLarge()
+{
+    // padLen == 17 exceeds the maximum block size (16) — invalid.
+    QByteArray data(32, '\x11'); // 0x11 == 17
+    QByteArray result = QAESEncryption::RemovePadding(data, QAESEncryption::PKCS7);
+    QCOMPARE(result, data);
+}
+
 // =================== CTR TESTS =========================
 // Test vectors from NIST SP 800-38A, Appendix F.5.
 // Counter increment: 128-bit big-endian (byte[15] is least significant).

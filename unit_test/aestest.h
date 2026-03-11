@@ -46,6 +46,12 @@ private slots:
     void CBC256StringEvenISO();
     void CBC256StringEvenPKCS7();
 
+    void PKCS7RemovePaddingValid();
+    void PKCS7RemovePaddingWrongLastByte();
+    void PKCS7RemovePaddingInconsistentBytes();
+    void PKCS7RemovePaddingZeroLength();
+    void PKCS7RemovePaddingTooLarge();
+
     void GenerateKeyLengthAES128();
     void GenerateKeyLengthAES192();
     void GenerateKeyLengthAES256();
