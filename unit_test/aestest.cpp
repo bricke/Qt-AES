@@ -419,6 +419,93 @@ void AesTest::CBC256StringEvenPKCS7()
     QCOMPARE(padding.size(), blockLen);
 }
 
+// =================== CTR TESTS =========================
+// Test vectors from NIST SP 800-38A, Appendix F.5.
+// Counter increment: 128-bit big-endian (byte[15] is least significant).
+
+void AesTest::CTR128KnownAnswer()
+{
+    // F.5.1 — AES-128-CTR, single block
+    QByteArray key = QByteArray::fromHex("2b7e151628aed2a6abf7158809cf4f3c");
+    QByteArray iv  = QByteArray::fromHex("f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff");
+    QByteArray pt  = QByteArray::fromHex("6bc1bee22e409f96e93d7e117393172a");
+    QByteArray ct  = QByteArray::fromHex("874d6191b620e3261bef6864990db6ce");
+
+    QAESEncryption enc(QAESEncryption::AES_128, QAESEncryption::CTR);
+    QCOMPARE(enc.encode(pt, key, iv), ct);
+    QCOMPARE(enc.decode(ct, key, iv), pt);
+}
+
+void AesTest::CTR192KnownAnswer()
+{
+    // F.5.3 — AES-192-CTR, single block
+    QByteArray key = QByteArray::fromHex("8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b");
+    QByteArray iv  = QByteArray::fromHex("f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff");
+    QByteArray pt  = QByteArray::fromHex("6bc1bee22e409f96e93d7e117393172a");
+    QByteArray ct  = QByteArray::fromHex("1abc932417521ca24f2b0459fe7e6e0b");
+
+    QAESEncryption enc(QAESEncryption::AES_192, QAESEncryption::CTR);
+    QCOMPARE(enc.encode(pt, key, iv), ct);
+    QCOMPARE(enc.decode(ct, key, iv), pt);
+}
+
+void AesTest::CTR256KnownAnswer()
+{
+    // F.5.5 — AES-256-CTR, single block
+    QByteArray key = QByteArray::fromHex("603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4");
+    QByteArray iv  = QByteArray::fromHex("f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff");
+    QByteArray pt  = QByteArray::fromHex("6bc1bee22e409f96e93d7e117393172a");
+    QByteArray ct  = QByteArray::fromHex("601ec313775789a5b7a7f504bbf3d228");
+
+    QAESEncryption enc(QAESEncryption::AES_256, QAESEncryption::CTR);
+    QCOMPARE(enc.encode(pt, key, iv), ct);
+    QCOMPARE(enc.decode(ct, key, iv), pt);
+}
+
+void AesTest::CTR128MultiBlock()
+{
+    // F.5.1 — AES-128-CTR, 4 blocks
+    QByteArray key = QByteArray::fromHex("2b7e151628aed2a6abf7158809cf4f3c");
+    QByteArray iv  = QByteArray::fromHex("f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff");
+    QByteArray pt  = QByteArray::fromHex("6bc1bee22e409f96e93d7e117393172a"
+                                         "ae2d8a571e03ac9c9eb76fac45af8e51"
+                                         "30c81c46a35ce411e5fbc1191a0a52ef"
+                                         "f69f2445df4f9b17ad2b417be66c3710");
+    QByteArray ct  = QByteArray::fromHex("874d6191b620e3261bef6864990db6ce"
+                                         "9806f66b7970fdff8617187bb9fffdff"
+                                         "5ae4df3edbd5d35e5b4f09020db03eab"
+                                         "1e031dda2fbe03d1792170a0f3009cee");
+
+    QAESEncryption enc(QAESEncryption::AES_128, QAESEncryption::CTR);
+    QCOMPARE(enc.encode(pt, key, iv), ct);
+    QCOMPARE(enc.decode(ct, key, iv), pt);
+}
+
+void AesTest::CTRPartialBlock()
+{
+    // CTR produces output the same length as input — no padding, no block-alignment required.
+    QByteArray key = QByteArray::fromHex("2b7e151628aed2a6abf7158809cf4f3c");
+    QByteArray iv  = QByteArray::fromHex("f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff");
+    QByteArray pt("Hello!");  // 6 bytes — not block-aligned
+
+    QAESEncryption enc(QAESEncryption::AES_128, QAESEncryption::CTR);
+    QByteArray ct = enc.encode(pt, key, iv);
+    QCOMPARE(ct.size(), pt.size());
+    QCOMPARE(enc.decode(ct, key, iv), pt);
+}
+
+void AesTest::CTRRoundTrip()
+{
+    QByteArray key = QByteArray::fromHex("603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4");
+    QByteArray iv  = QByteArray::fromHex("f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff");
+    QByteArray pt("CTR mode round-trip: no padding, output length equals input length.");
+
+    QAESEncryption enc(QAESEncryption::AES_256, QAESEncryption::CTR);
+    QByteArray ct = enc.encode(pt, key, iv);
+    QCOMPARE(ct.size(), pt.size());
+    QCOMPARE(enc.decode(ct, key, iv), pt);
+}
+
 // =================== AES-NI TESTS =========================
 // These tests only compile and run when QTAES_ENABLE_AESNI=ON.
 // They verify that the hardware path produces the same output as the
@@ -426,6 +513,62 @@ void AesTest::CBC256StringEvenPKCS7()
 // confirming the two code paths are equivalent.
 
 #ifdef USE_INTEL_AES_IF_AVAILABLE
+void AesTest::AesNiCTR128KnownAnswer()
+{
+    // Same NIST F.5.1 vector used by the software path — verifies hardware path produces
+    // identical output.
+    QByteArray key = QByteArray::fromHex("2b7e151628aed2a6abf7158809cf4f3c");
+    QByteArray iv  = QByteArray::fromHex("f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff");
+    QByteArray pt  = QByteArray::fromHex("6bc1bee22e409f96e93d7e117393172a"
+                                         "ae2d8a571e03ac9c9eb76fac45af8e51"
+                                         "30c81c46a35ce411e5fbc1191a0a52ef"
+                                         "f69f2445df4f9b17ad2b417be66c3710");
+    QByteArray ct  = QByteArray::fromHex("874d6191b620e3261bef6864990db6ce"
+                                         "9806f66b7970fdff8617187bb9fffdff"
+                                         "5ae4df3edbd5d35e5b4f09020db03eab"
+                                         "1e031dda2fbe03d1792170a0f3009cee");
+
+    QAESEncryption enc(QAESEncryption::AES_128, QAESEncryption::CTR);
+    QCOMPARE(enc.encode(pt, key, iv), ct);
+    QCOMPARE(enc.decode(ct, key, iv), pt);
+}
+
+void AesTest::AesNiCTR256KnownAnswer()
+{
+    QByteArray key = QByteArray::fromHex("603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4");
+    QByteArray iv  = QByteArray::fromHex("f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff");
+    QByteArray pt  = QByteArray::fromHex("6bc1bee22e409f96e93d7e117393172a");
+    QByteArray ct  = QByteArray::fromHex("601ec313775789a5b7a7f504bbf3d228");
+
+    QAESEncryption enc(QAESEncryption::AES_256, QAESEncryption::CTR);
+    QCOMPARE(enc.encode(pt, key, iv), ct);
+    QCOMPARE(enc.decode(ct, key, iv), pt);
+}
+
+void AesTest::AesNiCTRPartialBlock()
+{
+    QByteArray key = QByteArray::fromHex("2b7e151628aed2a6abf7158809cf4f3c");
+    QByteArray iv  = QByteArray::fromHex("f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff");
+    QByteArray pt("Hello!");
+
+    QAESEncryption enc(QAESEncryption::AES_128, QAESEncryption::CTR);
+    QByteArray ct = enc.encode(pt, key, iv);
+    QCOMPARE(ct.size(), pt.size());
+    QCOMPARE(enc.decode(ct, key, iv), pt);
+}
+
+void AesTest::AesNiCTRRoundTrip()
+{
+    QByteArray key = QByteArray::fromHex("603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4");
+    QByteArray iv  = QByteArray::fromHex("f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff");
+    QByteArray pt("AES-NI CTR round-trip — hardware keystream must match software keystream.");
+
+    QAESEncryption enc(QAESEncryption::AES_256, QAESEncryption::CTR);
+    QByteArray ct = enc.encode(pt, key, iv);
+    QCOMPARE(ct.size(), pt.size());
+    QCOMPARE(enc.decode(ct, key, iv), pt);
+}
+
 void AesTest::AesNiECB128KnownAnswer()
 {
     QAESEncryption encryption(QAESEncryption::AES_128, QAESEncryption::ECB);

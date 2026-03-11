@@ -36,6 +36,13 @@ private slots:
     void OFB128Crypt();
     void OFB256String();
 
+    void CTR128KnownAnswer();
+    void CTR192KnownAnswer();
+    void CTR256KnownAnswer();
+    void CTR128MultiBlock();
+    void CTRPartialBlock();
+    void CTRRoundTrip();
+
     void CBC256StringEvenISO();
     void CBC256StringEvenPKCS7();
 
@@ -53,6 +60,11 @@ private slots:
     void GenerateKeyIterationCapExceeded();
 
 #ifdef USE_INTEL_AES_IF_AVAILABLE
+    void AesNiCTR128KnownAnswer();
+    void AesNiCTR256KnownAnswer();
+    void AesNiCTRPartialBlock();
+    void AesNiCTRRoundTrip();
+
     void AesNiECB128KnownAnswer();
     void AesNiECB192KnownAnswer();
     void AesNiECB256KnownAnswer();

@@ -20,7 +20,7 @@
 
 /*!
  * \class QAESEncryption
- * \brief AES encryption/decryption for Qt supporting 128/192/256-bit keys and ECB, CBC, CFB, OFB modes.
+ * \brief AES encryption/decryption for Qt supporting 128/192/256-bit keys and ECB, CBC, CFB, OFB, CTR modes.
  *
  * \note \b Thread safety: instances are \b not thread-safe. Each instance holds a raw pointer
  *       (m_state) that is written to during every encrypt/decrypt operation, so a single instance
@@ -43,7 +43,8 @@ public:
         ECB,
         CBC,
         CFB,
-        OFB
+        OFB,
+        CTR  ///< Counter mode — stream cipher, no padding, encrypt == decrypt
     };
 
     enum Padding {

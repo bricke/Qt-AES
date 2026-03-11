@@ -94,7 +94,8 @@ if(QTAES_ENABLE_AESNI)
             aesni/aesni-key-exp.h
             aesni/aesni-key-init.h
             aesni/aesni-enc-ecb.h
-            aesni/aesni-enc-cbc.h)
+            aesni/aesni-enc-cbc.h
+            aesni/aesni-enc-ctr.h)
 
     target_compile_definitions(QtAES
         PRIVATE
