@@ -8,7 +8,7 @@
 [![CI (AES-NI)](https://github.com/bricke/Qt-AES/actions/workflows/ci-aesni.yml/badge.svg)](https://github.com/bricke/Qt-AES/actions/workflows/ci-aesni.yml)
 [![License: Unlicense](https://img.shields.io/badge/license-Unlicense-blue.svg)](http://unlicense.org/)
 
-AES-128 · AES-192 · AES-256 &nbsp;|&nbsp; ECB · CBC · CFB · OFB &nbsp;|&nbsp; PBKDF2 key derivation &nbsp;|&nbsp; Partial AES-NI support
+AES-128 · AES-192 · AES-256 &nbsp;|&nbsp; ECB · CBC · CFB · OFB · CTR &nbsp;|&nbsp; PBKDF2 key derivation &nbsp;|&nbsp; Partial AES-NI support
 
 </div>
 
@@ -17,7 +17,7 @@ AES-128 · AES-192 · AES-256 &nbsp;|&nbsp; ECB · CBC · CFB · OFB &nbsp;|&nbs
 ## Features
 
 - All AES key sizes — 128, 192, 256 bit
-- Four cipher modes — ECB, CBC, CFB, OFB
+- Five cipher modes — ECB, CBC, CFB, OFB, CTR
 - Three padding schemes — ISO (default), PKCS7, ZERO
 - PBKDF2-HMAC key derivation (RFC 2898) — no QtNetwork required
 - Optional hardware acceleration via AES-NI (ECB and CBC)
@@ -110,7 +110,7 @@ QAESEncryption(Aes level, Mode mode, Padding padding = ISO);
 | Enum | Values |
 |------|--------|
 | `QAESEncryption::Aes` | `AES_128`, `AES_192`, `AES_256` |
-| `QAESEncryption::Mode` | `ECB`, `CBC`, `CFB`, `OFB` |
+| `QAESEncryption::Mode` | `ECB`, `CBC`, `CFB`, `OFB`, `CTR` |
 | `QAESEncryption::Padding` | `ISO` (default), `PKCS7`, `ZERO` |
 
 </details>
@@ -220,6 +220,7 @@ On x86/x86-64 CPUs that support the AES-NI instruction set, Qt-AES can use nativ
 |------|---------|---------|
 | ECB  | ✅ | ✅ |
 | CBC  | ✅ | ✅ |
+| CTR  | ✅ | ✅ |
 | CFB  | — | — |
 | OFB  | — | — |
 
@@ -250,7 +251,7 @@ AES-NI is entirely transparent to the caller. The same `encode()` / `decode()` A
 
 ## Unit Testing
 
-Test vectors are taken from [NIST SP 800-38A](http://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38a.pdf).
+Test vectors are taken from [NIST SP 800-38A](http://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38a.pdf) for ECB, CBC, OFB, and CTR modes.
 `generateKey()` is validated against five PBKDF2-HMAC-SHA256 vectors cross-checked with Python's `hashlib.pbkdf2_hmac`.
 
 ```sh

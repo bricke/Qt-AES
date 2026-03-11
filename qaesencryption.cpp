@@ -5,6 +5,7 @@
 #include "aesni/aesni-key-init.h"
 #include "aesni/aesni-enc-ecb.h"
 #include "aesni/aesni-enc-cbc.h"
+#include "aesni/aesni-enc-ctr.h"
 #endif
 
 /*
@@ -560,8 +561,9 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
         QByteArray expandedKey = expandKey(key, true);
         QByteArray alignedText(rawText);
 
-        //Fill array with padding
-        alignedText.append(getPadding(rawText.size(), m_blocklen));
+        // CTR is a stream cipher — no padding required; all other modes need block alignment.
+        if (m_mode != CTR)
+            alignedText.append(getPadding(rawText.size(), m_blocklen));
 
     QByteArray result;
     switch(m_mode)
@@ -632,6 +634,39 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
         result.append(byteXor(alignedText, ofbTemp));
     }
     break;
+    case CTR: {
+#ifdef USE_INTEL_AES_IF_AVAILABLE
+        if (m_aesNIAvailable) {
+            quint8 ivec[16];
+            memcpy(ivec, iv.data(), iv.size());
+            char expKey[240];
+            memcpy(expKey, expandedKey.data(), expandedKey.size());
+            result.resize(alignedText.size());
+            AES_CTR_xcrypt((unsigned char*) alignedText.constData(),
+                           (unsigned char*) result.data(),
+                           ivec,
+                           alignedText.size(),
+                           expKey,
+                           m_nr);
+            break;
+        }
+#endif
+        // Software CTR: encrypt each counter block to produce a keystream block,
+        // XOR with plaintext. Partial last block is handled by byteXor's min-size logic.
+        QByteArray counterBlock(iv);
+        for (int i = 0; i < alignedText.size(); i += m_blocklen) {
+            QByteArray keyStream = cipher(expandedKey, counterBlock);
+            int blockSize = qMin(m_blocklen, alignedText.size() - i);
+            result.append(byteXor(alignedText.mid(i, blockSize), keyStream.left(blockSize)));
+            // Increment counter as a 128-bit big-endian integer (byte[15] is least significant).
+            unsigned char *ctr = reinterpret_cast<unsigned char*>(counterBlock.data());
+            for (int j = m_blocklen - 1; j >= 0; --j) {
+                if (++ctr[j] != 0)
+                    break;
+            }
+        }
+    }
+    break;
     default: break;
     }
 
@@ -643,7 +678,9 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
 
 QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv)
 {
-    if ((m_mode >= CBC && (iv.isEmpty() || iv.size() != m_blocklen)) || key.size() != m_keyLen || rawText.size() % m_blocklen != 0)
+    // CTR ciphertext can be any length (stream cipher); all other modes must be block-aligned.
+    if ((m_mode >= CBC && (iv.isEmpty() || iv.size() != m_blocklen)) || key.size() != m_keyLen
+            || (rawText.size() % m_blocklen != 0 && m_mode != CTR))
            return QByteArray();
 
         QByteArray ret;
@@ -730,6 +767,37 @@ QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &k
             ofbTemp.append(cipher(expandedKey, ofbTemp.right(m_blocklen)));
         }
         ret.append(byteXor(rawText, ofbTemp));
+    }
+        break;
+    case CTR: {
+        // CTR decryption is identical to encryption — reuse the same keystream.
+#ifdef USE_INTEL_AES_IF_AVAILABLE
+        if (m_aesNIAvailable) {
+            quint8 ivec[16];
+            memcpy(ivec, iv.data(), iv.size());
+            char expKey[240];
+            memcpy(expKey, expandedKey.data(), expandedKey.size());
+            ret.resize(rawText.size());
+            AES_CTR_xcrypt((unsigned char*) rawText.constData(),
+                           (unsigned char*) ret.data(),
+                           ivec,
+                           rawText.size(),
+                           expKey,
+                           m_nr);
+            break;
+        }
+#endif
+        QByteArray counterBlock(iv);
+        for (int i = 0; i < rawText.size(); i += m_blocklen) {
+            QByteArray keyStream = cipher(expandedKey, counterBlock);
+            int blockSize = qMin(m_blocklen, rawText.size() - i);
+            ret.append(byteXor(rawText.mid(i, blockSize), keyStream.left(blockSize)));
+            unsigned char *ctr = reinterpret_cast<unsigned char*>(counterBlock.data());
+            for (int j = m_blocklen - 1; j >= 0; --j) {
+                if (++ctr[j] != 0)
+                    break;
+            }
+        }
     }
         break;
     default:
