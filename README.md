@@ -7,6 +7,7 @@
 [![CI](https://github.com/bricke/Qt-AES/actions/workflows/ci.yml/badge.svg)](https://github.com/bricke/Qt-AES/actions/workflows/ci.yml)
 [![CI (AES-NI)](https://github.com/bricke/Qt-AES/actions/workflows/ci-aesni.yml/badge.svg)](https://github.com/bricke/Qt-AES/actions/workflows/ci-aesni.yml)
 [![CI (Sanitizers)](https://github.com/bricke/Qt-AES/actions/workflows/ci-sanitizers.yml/badge.svg)](https://github.com/bricke/Qt-AES/actions/workflows/ci-sanitizers.yml)
+[![CI (Fuzzing)](https://github.com/bricke/Qt-AES/actions/workflows/ci-fuzzing.yml/badge.svg)](https://github.com/bricke/Qt-AES/actions/workflows/ci-fuzzing.yml)
 [![License: Unlicense](https://img.shields.io/badge/license-Unlicense-blue.svg)](http://unlicense.org/)
 
 AES-128 · AES-192 · AES-256 &nbsp;|&nbsp; ECB · CBC · CFB · OFB · CTR &nbsp;|&nbsp; PBKDF2 key derivation &nbsp;|&nbsp; Partial AES-NI support
@@ -44,7 +45,8 @@ cmake -B build \
   -DQTAES_ENABLE_AESNI=ON \       # Hardware AES-NI acceleration (all modes)
   -DQTAES_ENABLE_TESTS=ON \       # Build unit tests
   -DQTAES_ENABLE_WERROR=ON \      # Treat warnings as errors
-  -DQTAES_ENABLE_SANITIZERS=ON    # AddressSanitizer + UBSan (GCC/Clang only)
+  -DQTAES_ENABLE_SANITIZERS=ON \  # AddressSanitizer + UBSan (GCC/Clang only)
+  -DQTAES_ENABLE_FUZZING=ON       # libFuzzer fuzz target (Clang only)
 ```
 
 ### Use in your project
@@ -259,6 +261,36 @@ cmake -B build -DQTAES_ENABLE_TESTS=ON -DCMAKE_PREFIX_PATH=/path/to/Qt
 cmake --build build
 ctest --test-dir build -V
 ```
+
+---
+
+## Fuzzing
+
+A [libFuzzer](https://llvm.org/docs/LibFuzzer.html) fuzz target lives in `fuzz/fuzz_encrypt.cpp`.
+It exercises all five cipher modes, all three key sizes, and all three padding schemes against
+randomly mutated inputs, and checks two properties on every input:
+
+1. **Crash freedom** — neither `encode()` nor `decode()` ever crashes or triggers memory errors
+   (AddressSanitizer is always active with `-fsanitize=fuzzer`).
+2. **Round-trip correctness** — for PKCS7 padding, `removePadding(decode(encode(pt))) == pt`;
+   for CTR mode, `decode(encode(pt)) == pt` directly.
+
+### Building and running
+
+```sh
+cmake -B build-fuzz \
+  -DQTAES_ENABLE_FUZZING=ON \
+  -DCMAKE_CXX_COMPILER=clang++ \
+  -DCMAKE_PREFIX_PATH=/path/to/Qt
+
+cmake --build build-fuzz --target fuzz_encrypt
+
+# Run for 60 seconds, seeding from the provided corpus:
+./build-fuzz/fuzz_encrypt fuzz/corpus/ -max_total_time=60
+```
+
+The `fuzz/corpus/` directory contains seed inputs that cover all mode/level/padding
+combinations, giving the fuzzer a head start.
 
 ---
 

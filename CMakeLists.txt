@@ -11,6 +11,7 @@ option(QTAES_ENABLE_INSTALL    "${PROJECT_NAME}: Enable install"                
 option(QTAES_ENABLE_TESTS      "${PROJECT_NAME}: Enable tests"                           ${QTAES_STANDALONE_BUILD})
 option(QTAES_ENABLE_WERROR     "${PROJECT_NAME}: Treat warnings as errors"               OFF)
 option(QTAES_ENABLE_SANITIZERS "${PROJECT_NAME}: Enable AddressSanitizer + UBSan"        OFF)
+option(QTAES_ENABLE_FUZZING    "${PROJECT_NAME}: Build libFuzzer fuzz target (Clang only)" OFF)
 
 # GNUInstallDirs is needed for CMAKE_INSTALL_* variables used in
 # target_include_directories and the install() calls below.
@@ -154,6 +155,24 @@ if(QTAES_ENABLE_TESTS)
     add_test(
         NAME AESTest
         COMMAND AESTest)
+endif()
+
+if(QTAES_ENABLE_FUZZING)
+    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        message(FATAL_ERROR "QTAES_ENABLE_FUZZING requires Clang (libFuzzer is a Clang-only feature).")
+    endif()
+
+    set(_QTAES_FUZZ_FLAGS -fsanitize=fuzzer,address -fno-omit-frame-pointer)
+
+    add_executable(fuzz_encrypt fuzz/fuzz_encrypt.cpp)
+
+    set_target_properties(fuzz_encrypt PROPERTIES AUTOMOC ON)
+
+    target_link_libraries(fuzz_encrypt PRIVATE QtAES)
+
+    target_compile_options(QtAES   PRIVATE ${_QTAES_FUZZ_FLAGS})
+    target_compile_options(fuzz_encrypt PRIVATE ${_QTAES_FUZZ_FLAGS})
+    target_link_options   (fuzz_encrypt PRIVATE ${_QTAES_FUZZ_FLAGS})
 endif()
 
 if(QTAES_ENABLE_INSTALL)
