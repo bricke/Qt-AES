@@ -6,6 +6,7 @@
 
 [![CI](https://github.com/bricke/Qt-AES/actions/workflows/ci.yml/badge.svg)](https://github.com/bricke/Qt-AES/actions/workflows/ci.yml)
 [![CI (AES-NI)](https://github.com/bricke/Qt-AES/actions/workflows/ci-aesni.yml/badge.svg)](https://github.com/bricke/Qt-AES/actions/workflows/ci-aesni.yml)
+[![CI (Sanitizers)](https://github.com/bricke/Qt-AES/actions/workflows/ci-sanitizers.yml/badge.svg)](https://github.com/bricke/Qt-AES/actions/workflows/ci-sanitizers.yml)
 [![License: Unlicense](https://img.shields.io/badge/license-Unlicense-blue.svg)](http://unlicense.org/)
 
 AES-128 · AES-192 · AES-256 &nbsp;|&nbsp; ECB · CBC · CFB · OFB · CTR &nbsp;|&nbsp; PBKDF2 key derivation &nbsp;|&nbsp; Partial AES-NI support
@@ -40,9 +41,10 @@ Enable optional features:
 
 ```sh
 cmake -B build \
-  -DQTAES_ENABLE_AESNI=ON \    # Hardware AES-NI acceleration (ECB/CBC only)
-  -DQTAES_ENABLE_TESTS=ON \    # Build unit tests
-  -DQTAES_ENABLE_WERROR=ON     # Treat warnings as errors
+  -DQTAES_ENABLE_AESNI=ON \       # Hardware AES-NI acceleration (all modes)
+  -DQTAES_ENABLE_TESTS=ON \       # Build unit tests
+  -DQTAES_ENABLE_WERROR=ON \      # Treat warnings as errors
+  -DQTAES_ENABLE_SANITIZERS=ON    # AddressSanitizer + UBSan (GCC/Clang only)
 ```
 
 ### Use in your project
@@ -83,18 +85,20 @@ target_link_libraries(your_target PRIVATE QtAES::QtAES)
 
 | Method | Description |
 |--------|-------------|
-| `encode(rawText, key, iv)` | Encrypt `rawText` with `key`. `iv` required for CBC/CFB/OFB. |
-| `decode(rawText, key, iv)` | Decrypt `rawText` with `key`. `iv` required for CBC/CFB/OFB. |
-| `removePadding(rawText)` | Strip padding from a decrypted buffer. |
+| `encode(rawText, key, iv, ok)` | Encrypt `rawText` with `key`. `iv` required for CBC/CFB/OFB/CTR. Optional `bool *ok` set to `false` on invalid key/IV. |
+| `decode(rawText, key, iv, ok)` | Decrypt `rawText` with `key`. `iv` required for CBC/CFB/OFB/CTR. Optional `bool *ok` set to `false` on invalid input. |
+| `removePadding(rawText, ok)` | Strip padding. Optional `bool *ok` set to `false` if PKCS7 padding is invalid. |
 | `expandKey(key, isEncryptionKey)` | Expand a raw key into the Rijndael key schedule. |
+
+All `ok` parameters default to `nullptr` — existing code requires no changes.
 
 ### Static methods
 
 | Method | Description |
 |--------|-------------|
-| `QAESEncryption::Crypt(...)` | Static encrypt — no instance needed. |
-| `QAESEncryption::Decrypt(...)` | Static decrypt — no instance needed. |
-| `QAESEncryption::RemovePadding(...)` | Static padding removal. |
+| `QAESEncryption::Crypt(..., ok)` | Static encrypt — no instance needed. Optional `bool *ok`. |
+| `QAESEncryption::Decrypt(..., ok)` | Static decrypt — no instance needed. Optional `bool *ok`. |
+| `QAESEncryption::RemovePadding(..., ok)` | Static padding removal. Optional `bool *ok`. |
 | `QAESEncryption::ExpandKey(...)` | Static key expansion. |
 | `QAESEncryption::generateKey(password, salt, level, algo, iterations)` | Derive an AES-ready key via PBKDF2-HMAC (see below). |
 

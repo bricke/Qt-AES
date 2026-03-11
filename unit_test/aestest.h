@@ -52,6 +52,15 @@ private slots:
     void PKCS7RemovePaddingZeroLength();
     void PKCS7RemovePaddingTooLarge();
 
+    void OkParamEncodeSuccess();
+    void OkParamEncodeWrongKeySize();
+    void OkParamEncodeMissingIV();
+    void OkParamDecodeSuccess();
+    void OkParamDecodeWrongKeySize();
+    void OkParamDecodeUnaligned();
+    void OkParamRemovePaddingValid();
+    void OkParamRemovePaddingInvalid();
+
     void GenerateKeyLengthAES128();
     void GenerateKeyLengthAES192();
     void GenerateKeyLengthAES256();

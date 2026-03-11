@@ -56,15 +56,17 @@ quint8 multiply(quint8 x, quint8 y)
  * Static Functions
  * */
 QByteArray QAESEncryption::Crypt(QAESEncryption::Aes level, QAESEncryption::Mode mode, const QByteArray &rawText,
-                                 const QByteArray &key, const QByteArray &iv, QAESEncryption::Padding padding)
+                                 const QByteArray &key, const QByteArray &iv, QAESEncryption::Padding padding,
+                                 bool *ok)
 {
-    return QAESEncryption(level, mode, padding).encode(rawText, key, iv);
+    return QAESEncryption(level, mode, padding).encode(rawText, key, iv, ok);
 }
 
 QByteArray QAESEncryption::Decrypt(QAESEncryption::Aes level, QAESEncryption::Mode mode, const QByteArray &rawText,
-                                   const QByteArray &key, const QByteArray &iv, QAESEncryption::Padding padding)
+                                   const QByteArray &key, const QByteArray &iv, QAESEncryption::Padding padding,
+                                   bool *ok)
 {
-     return QAESEncryption(level, mode, padding).decode(rawText, key, iv);
+     return QAESEncryption(level, mode, padding).decode(rawText, key, iv, ok);
 }
 
 QByteArray QAESEncryption::ExpandKey(QAESEncryption::Aes level, QAESEncryption::Mode mode, const QByteArray &key, bool isEncryptionKey)
@@ -72,10 +74,14 @@ QByteArray QAESEncryption::ExpandKey(QAESEncryption::Aes level, QAESEncryption::
      return QAESEncryption(level, mode).expandKey(key, isEncryptionKey);
 }
 
-QByteArray QAESEncryption::RemovePadding(const QByteArray &rawText, QAESEncryption::Padding padding)
+QByteArray QAESEncryption::RemovePadding(const QByteArray &rawText, QAESEncryption::Padding padding, bool *ok)
 {
-    if (rawText.isEmpty())
+    if (ok) *ok = false;
+
+    if (rawText.isEmpty()) {
+        if (ok) *ok = true;
         return rawText;
+    }
 
     QByteArray ret(rawText);
     switch (padding)
@@ -105,6 +111,7 @@ QByteArray QAESEncryption::RemovePadding(const QByteArray &rawText, QAESEncrypti
             ret.remove(len - padLen, padLen);
         } else {
             qWarning("QAESEncryption::RemovePadding: invalid PKCS7 padding — buffer returned unchanged");
+            return ret; // ok remains false
         }
         break;
     }
@@ -131,6 +138,7 @@ QByteArray QAESEncryption::RemovePadding(const QByteArray &rawText, QAESEncrypti
         //do nothing
         break;
     }
+    if (ok) *ok = true;
     return ret;
 }
 QByteArray QAESEncryption::generateKey(const QByteArray &password, const QByteArray &salt,
@@ -593,8 +601,9 @@ QByteArray QAESEncryption::printArray(uchar* arr, int size)
     return print.toHex();
 }
 
-QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv)
+QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv, bool *ok)
 {
+    if (ok) *ok = false;
     if ((m_mode >= CBC && (iv.isEmpty() || iv.size() != m_blocklen)) || key.size() != m_keyLen)
            return QByteArray();
 
@@ -745,11 +754,13 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
     // Securely zero the expanded key schedule before returning — it contains
     // key-derived material and QByteArray does not zero on destruction.
     secureZero(expandedKey);
+    if (ok) *ok = true;
     return result;
 }
 
-QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv)
+QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv, bool *ok)
 {
+    if (ok) *ok = false;
     // CTR ciphertext can be any length (stream cipher); all other modes must be block-aligned.
     if ((m_mode >= CBC && (iv.isEmpty() || iv.size() != m_blocklen)) || key.size() != m_keyLen
             || (rawText.size() % m_blocklen != 0 && m_mode != CTR))
@@ -912,10 +923,11 @@ QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &k
     // Securely zero the expanded key schedule before returning — it contains
     // key-derived material and QByteArray does not zero on destruction.
     secureZero(expandedKey);
+    if (ok) *ok = true;
     return ret;
 }
 
-QByteArray QAESEncryption::removePadding(const QByteArray &rawText)
+QByteArray QAESEncryption::removePadding(const QByteArray &rawText, bool *ok)
 {
-    return RemovePadding(rawText, (Padding) m_padding);
+    return RemovePadding(rawText, (Padding) m_padding, ok);
 }
