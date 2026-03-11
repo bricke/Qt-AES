@@ -1,5 +1,8 @@
 #include "qaesencryption.h"
 
+#include <QDebug>
+#include <cstddef>
+
 #ifdef USE_INTEL_AES_IF_AVAILABLE
 #include "aesni/aesni-key-exp.h"
 #include "aesni/aesni-key-init.h"
@@ -7,6 +10,45 @@
 #include "aesni/aesni-enc-cbc.h"
 #include "aesni/aesni-enc-ctr.h"
 #endif
+
+namespace {
+
+// Zeroes key material in a QByteArray before it goes out of scope.
+// A volatile pointer is used to prevent the compiler from eliding the write
+// as a "dead store" — a risk with plain memset when the buffer is not read
+// again afterwards. This is best-effort: the C++ standard does not formally
+// guarantee volatile writes survive every optimisation pass, but all major
+// compilers (GCC, Clang, MSVC) respect them in practice.
+void secureZero(QByteArray &ba)
+{
+    if (ba.isEmpty())
+        return;
+    volatile char *p = ba.data();
+    for (int i = 0; i < ba.size(); ++i)
+        p[i] = 0;
+}
+
+#ifdef USE_INTEL_AES_IF_AVAILABLE
+void secureZero(void *ptr, std::size_t len)
+{
+    volatile unsigned char *p = static_cast<volatile unsigned char *>(ptr);
+    for (std::size_t i = 0; i < len; ++i)
+        p[i] = 0;
+}
+#endif
+
+quint8 xTime(quint8 x)
+{
+    return ((x<<1) ^ (((x>>7) & 1) * 0x1b));
+}
+
+quint8 multiply(quint8 x, quint8 y)
+{
+    return (((y & 1) * x) ^ ((y>>1 & 1) * xTime(x)) ^ ((y>>2 & 1) * xTime(xTime(x))) ^ ((y>>3 & 1)
+            * xTime(xTime(xTime(x)))) ^ ((y>>4 & 1) * xTime(xTime(xTime(xTime(x))))));
+}
+
+} // namespace
 
 /*
  * Static Functions
@@ -42,12 +84,28 @@ QByteArray QAESEncryption::RemovePadding(const QByteArray &rawText, QAESEncrypti
             ret.remove(ret.length()-1, 1);
         break;
     case Padding::PKCS7:
-#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
-        ret.remove(ret.length() - ret.back(), ret.back());
-#else
-        ret.remove(ret.length() - ret.at(ret.length() - 1), ret.at(ret.length() - 1));
-#endif
+    {
+        // PKCS7 requires every padding byte to equal the padding length.
+        // Validate before removing — silently stripping arbitrary bytes is a
+        // security issue (enables padding oracle and data corruption attacks).
+        const int len = ret.size();
+        const quint8 padLen = static_cast<quint8>(ret.at(len - 1));
+        bool valid = (padLen >= 1 && padLen <= 16 && padLen <= len);
+        if (valid) {
+            for (int i = len - padLen; i < len; ++i) {
+                if (static_cast<quint8>(ret.at(i)) != padLen) {
+                    valid = false;
+                    break;
+                }
+            }
+        }
+        if (valid) {
+            ret.remove(len - padLen, padLen);
+        } else {
+            qWarning("QAESEncryption::RemovePadding: invalid PKCS7 padding — buffer returned unchanged");
+        }
         break;
+    }
     case Padding::ISO:
     {
         // Find the last byte which is not zero
@@ -117,37 +175,18 @@ QByteArray QAESEncryption::generateKey(const QByteArray &password, const QByteAr
         derived.append(xorSum);
 
         // QByteArray does not zero memory on destruction, so key material would
-        // otherwise linger on the heap. memset before leaving scope to limit exposure.
-        memset(u.data(), 0, u.size());
-        memset(xorSum.data(), 0, xorSum.size());
+        // otherwise linger on the heap. Securely zero before leaving scope.
+        secureZero(u);
+        secureZero(xorSum);
     }
 
     QByteArray result = derived.left(keyLen);
-    memset(derived.data(), 0, derived.size());
+    secureZero(derived);
     return result;
 }
 /*
  * End Static function declarations
  * */
-
-/*
- * Local Functions
- * */
-
-namespace {
-
-quint8 xTime(quint8 x)
-{
-    return ((x<<1) ^ (((x>>7) & 1) * 0x1b));
-}
-
-quint8 multiply(quint8 x, quint8 y)
-{
-    return (((y & 1) * x) ^ ((y>>1 & 1) * xTime(x)) ^ ((y>>2 & 1) * xTime(xTime(x))) ^ ((y>>3 & 1)
-            * xTime(xTime(xTime(x)))) ^ ((y>>4 & 1) * xTime(xTime(xTime(xTime(x))))));
-}
-
-}
 
 /*
  * End Local functions
@@ -244,7 +283,7 @@ QByteArray QAESEncryption::expandKey(const QByteArray &key, bool isEncryptionKey
               QByteArray expKey;
               expKey.resize(aes128.expandedKey);
               memcpy(expKey.data(), (char*) aesKey.KEY, aes128.expandedKey);
-              memset(aesKey.KEY, 0, 240);
+              secureZero(aesKey.KEY, 240);
               return expKey;
           }
               break;
@@ -260,7 +299,7 @@ QByteArray QAESEncryption::expandKey(const QByteArray &key, bool isEncryptionKey
               QByteArray expKey;
               expKey.resize(aes192.expandedKey);
               memcpy(expKey.data(), (char*) aesKey.KEY, aes192.expandedKey);
-              memset(aesKey.KEY, 0, 240);
+              secureZero(aesKey.KEY, 240);
               return expKey;
           }
               break;
@@ -276,7 +315,7 @@ QByteArray QAESEncryption::expandKey(const QByteArray &key, bool isEncryptionKey
               QByteArray expKey;
               expKey.resize(aes256.expandedKey);
               memcpy(expKey.data(), (char*) aesKey.KEY, aes256.expandedKey);
-              memset(aesKey.KEY, 0, 240);
+              secureZero(aesKey.KEY, 240);
               return expKey;
           }
               break;
@@ -669,9 +708,9 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
     default: break;
     }
 
-    // Zero the expanded key schedule before returning — it contains key-derived material
-    // and QByteArray does not zero on destruction.
-    memset(expandedKey.data(), 0, expandedKey.size());
+    // Securely zero the expanded key schedule before returning — it contains
+    // key-derived material and QByteArray does not zero on destruction.
+    secureZero(expandedKey);
     return result;
 }
 
@@ -804,9 +843,9 @@ QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &k
         break;
     }
 
-    // Zero the expanded key schedule before returning — it contains key-derived material
-    // and QByteArray does not zero on destruction.
-    memset(expandedKey.data(), 0, expandedKey.size());
+    // Securely zero the expanded key schedule before returning — it contains
+    // key-derived material and QByteArray does not zero on destruction.
+    secureZero(expandedKey);
     return ret;
 }
 
