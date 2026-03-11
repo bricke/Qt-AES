@@ -592,14 +592,6 @@ QByteArray QAESEncryption::invCipher(const QByteArray &expKey, const QByteArray 
     return state;
 }
 
-QByteArray QAESEncryption::printArray(uchar* arr, int size)
-{
-    QByteArray print("");
-    for(int i=0; i<size; i++)
-        print.append(arr[i]);
-
-    return print.toHex();
-}
 
 QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv, bool *ok)
 {
