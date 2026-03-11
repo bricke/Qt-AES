@@ -1,0 +1,51 @@
+name: CI (Fuzzing)
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  schedule:
+    # Run a short fuzz session weekly so regressions are caught early.
+    - cron: '0 3 * * 1'
+
+jobs:
+  fuzz:
+    name: libFuzzer (${{ matrix.qt }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        qt: [ '6.7.0', '5.15.2' ]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt ${{ matrix.qt }}
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: ${{ matrix.qt }}
+
+      - name: Install Clang
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y clang
+
+      - name: Configure
+        run: |
+          cmake -B build-fuzz \
+            -DQTAES_ENABLE_FUZZING=ON \
+            -DCMAKE_CXX_COMPILER=clang++ \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo
+
+      - name: Build fuzz target
+        run: cmake --build build-fuzz --target fuzz_encrypt --parallel
+
+      - name: Run fuzzer (short session)
+        env:
+          ASAN_OPTIONS: halt_on_error=1:detect_leaks=0
+        run: |
+          ./build-fuzz/fuzz_encrypt fuzz/corpus/ \
+            -max_total_time=30 \
+            -timeout=10 \
+            -print_final_stats=1
