@@ -38,6 +38,11 @@ private slots:
     void OFB128Crypt();
     void OFB256String();
 
+    void CFBNoPaddingPartialBlock();
+    void OFBNoPaddingPartialBlock();
+    void NoPaddingRejectedForECB();
+    void NoPaddingRejectedForCBC();
+
     void CTR128KnownAnswer();
     void CTR192KnownAnswer();
     void CTR256KnownAnswer();

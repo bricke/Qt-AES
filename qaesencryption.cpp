@@ -265,6 +265,8 @@ QByteArray QAESEncryption::getPadding(int currSize, int alignment)
         if (size > 0)
             return QByteArray (size - 1, 0x00).prepend('\x80');
         break;
+    case Padding::NONE:
+        return QByteArray();
     default:
         return QByteArray(size, 0x00);
         break;
@@ -599,6 +601,13 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
     if ((m_mode >= CBC && (iv.isEmpty() || iv.size() != m_blocklen)) || key.size() != m_keyLen)
            return QByteArray();
 
+    // NONE padding is only valid for stream cipher modes (CFB, OFB, CTR).
+    // ECB and CBC require block-aligned input; reject unaligned input early.
+    if (m_padding == Padding::NONE && (m_mode == ECB || m_mode == CBC)
+            && rawText.size() % m_blocklen != 0) {
+        return QByteArray();
+    }
+
         QByteArray expandedKey = expandKey(key, true);
         QByteArray alignedText(rawText);
 
@@ -754,9 +763,12 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
 QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv, bool *ok)
 {
     if (ok) *ok = false;
-    // CTR ciphertext can be any length (stream cipher); all other modes must be block-aligned.
+    // Stream cipher modes with no padding allow arbitrary-length ciphertext.
+    const bool isStreamMode = (m_mode == CTR)
+                              || ((m_mode == CFB || m_mode == OFB) && m_padding == Padding::NONE);
+    // CTR/CFB(NONE)/OFB(NONE) ciphertext can be any length; all other modes must be block-aligned.
     if ((m_mode >= CBC && (iv.isEmpty() || iv.size() != m_blocklen)) || key.size() != m_keyLen
-            || (rawText.size() % m_blocklen != 0 && m_mode != CTR))
+            || (rawText.size() % m_blocklen != 0 && !isStreamMode))
            return QByteArray();
 
         QByteArray ret;
