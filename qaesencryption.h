@@ -26,6 +26,10 @@
  *       All mutable state during an operation is kept on the call stack; no member variables
  *       are written after construction. The static methods (Crypt, Decrypt, ExpandKey,
  *       RemovePadding, generateKey) are also safe to call concurrently.
+ *
+ * \note \b API stability: encode(), decode(), removePadding(), and the static equivalents
+ *       (Crypt, Decrypt, RemovePadding, generateKey) form the stable public surface.
+ *       ExpandKey() is provided for advanced use and may change in future versions.
  */
 class QTAESSHARED_EXPORT QAESEncryption : public QObject
 {
@@ -80,13 +84,18 @@ public:
                               const QByteArray &iv = QByteArray(), QAESEncryption::Padding padding = QAESEncryption::ISO,
                               bool *ok = nullptr);
     /*!
-     * \brief static method call to expand the user key to fit the encrypting/decrypting algorithm
-     * \param level:            AES::Aes level
-     * \param mode:             AES::Mode mode
-     * \param key:              user-key (key.size either 128, 192, 256 bits depending on AES::Aes)
-     * \param expKey:           output expanded key
-     * \param isEncryptionKey:    always 'true' || only 'false' when DECRYPTING in CBC or EBC mode with aesni (check if supported)
-     * \return AES-ready key
+     * \brief Expand a raw key into the Rijndael key schedule (advanced use).
+     *
+     * Most callers do not need this — encode() and decode() handle key expansion
+     * internally. This method is provided for advanced scenarios where the caller
+     * wants to inspect or cache the expanded key schedule.
+     *
+     * \param level            AES key size.
+     * \param mode             Cipher mode (affects key schedule direction).
+     * \param key              Raw user key (16, 24, or 32 bytes).
+     * \param isEncryptionKey  Pass \c true for encryption; \c false only when
+     *                         decrypting with AES-NI in ECB or CBC mode.
+     * \return Expanded key schedule bytes.
      */
     static QByteArray ExpandKey(QAESEncryption::Aes level, QAESEncryption::Mode mode, const QByteArray &key, bool isEncryptionKey);
 
@@ -147,21 +156,13 @@ public:
                       bool *ok = nullptr);
 
     /*!
-     * \brief object method call to expand the user key to fit the encrypting/decrypting algorithm
-     * \param key:              user-key (key.size either 128, 192, 256 bits depending on AES::Aes)
-     * \param isEncryptionKey:    always 'true' || only 'false' when DECRYPTING in CBC or EBC mode with aesni (check if supported)
-     * \return AES-ready key
-     */
-    QByteArray expandKey(const QByteArray &key, bool isEncryptionKey);
-
-    /*!
      * \brief object method call to remove padding from decrypted cipher given by rawText
      * \param rawText:  inputText
+     * \param ok:       if non-null, set to true on success or false if PKCS7 padding is invalid
      * \return decrypted cipher with padding removed
      */
     QByteArray removePadding(const QByteArray &rawText, bool *ok = nullptr);
 
-    QByteArray printArray(uchar *arr, int size);
 Q_SIGNALS:
 
 public Q_SLOTS:
@@ -190,7 +191,7 @@ private:
         int nk = 6;
         int keylen = 24;
         int nr = 12;
-        int expandedKey = 209;
+        int expandedKey = 208; // (Nr+1)*Nb*4 = 13*16 = 208 bytes
         int userKeySize = 192;
     };
 
@@ -201,6 +202,8 @@ private:
         int expandedKey = 176;
         int userKeySize = 128;
     };
+
+    QByteArray expandKey(const QByteArray &key, bool isEncryptionKey);
 
     quint8 getSBoxValue(quint8 num){return sbox[num];}
     quint8 getSBoxInvert(quint8 num){return rsbox[num];}
