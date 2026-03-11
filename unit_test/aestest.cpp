@@ -269,6 +269,24 @@ void AesTest::CBC128Decrypt()
 
 //=================== CFB TESTING ============================
 
+void AesTest::CFB128KnownAnswer()
+{
+    // NIST SP 800-38A, F.3.13/F.3.14 — CFB128-AES128 Encrypt/Decrypt (two blocks).
+    // Verifies both the software and (when built with AES-NI) hardware paths against
+    // authoritative vectors. Same key and IV as the OFB128 test.
+    //
+    // P1: 6bc1bee22e409f96e93d7e117393172a → C1: 3b3fd92eb72dad20333449f8e83cfb4a
+    // P2: ae2d8a571e03ac9c9eb76fac45af8e51 → C2: c8a64537a0b3a93fcde3cdad9f1ce58b
+    QByteArray pt = QByteArray::fromHex("6bc1bee22e409f96e93d7e117393172a"
+                                        "ae2d8a571e03ac9c9eb76fac45af8e51");
+    QByteArray ct = QByteArray::fromHex("3b3fd92eb72dad20333449f8e83cfb4a"
+                                        "c8a64537a0b3a93fcde3cdad9f1ce58b");
+
+    QAESEncryption enc(QAESEncryption::AES_128, QAESEncryption::CFB);
+    QCOMPARE(enc.encode(pt, key16, iv), ct);
+    QCOMPARE(enc.decode(ct, key16, iv), pt);
+}
+
 void AesTest::CFB256String()
 {
     QAESEncryption encryption(QAESEncryption::AES_256, QAESEncryption::CFB, QAESEncryption::PKCS7);

@@ -674,11 +674,12 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
             break;
         }
 #endif
-        result.append(byteXor(alignedText.left(m_blocklen), cipher(expandedKey, iv)));
-        for(int i=0; i < alignedText.size(); i+= m_blocklen) {
-            if (i+m_blocklen < alignedText.size())
-                result.append(byteXor(alignedText.mid(i+m_blocklen, m_blocklen),
-                                   cipher(expandedKey, result.mid(i, m_blocklen))));
+        // CFB encrypt: C[i] = AES_E(C[i-1]) XOR P[i], C[-1] = IV
+        QByteArray cfbFeedback(iv);
+        for (int i = 0; i < alignedText.size(); i += m_blocklen) {
+            QByteArray block = byteXor(alignedText.mid(i, m_blocklen), cipher(expandedKey, cfbFeedback));
+            result.append(block);
+            cfbFeedback = block;
         }
     }
     break;
@@ -842,13 +843,13 @@ QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &k
             break;
         }
 #endif
-            ret.append(byteXor(rawText.mid(0, m_blocklen), cipher(expandedKey, iv)));
-            for(int i=0; i < rawText.size(); i+= m_blocklen){
-                if (i+m_blocklen < rawText.size()) {
-                    ret.append(byteXor(rawText.mid(i+m_blocklen, m_blocklen),
-                                       cipher(expandedKey, rawText.mid(i, m_blocklen))));
-                }
-            }
+        // CFB decrypt: P[i] = AES_E(C[i-1]) XOR C[i], C[-1] = IV
+        // Note: CFB uses the FORWARD cipher (AES_E) for decryption, not invCipher.
+        QByteArray cfbFeedback(iv);
+        for (int i = 0; i < rawText.size(); i += m_blocklen) {
+            ret.append(byteXor(rawText.mid(i, m_blocklen), cipher(expandedKey, cfbFeedback)));
+            cfbFeedback = rawText.mid(i, m_blocklen); // feedback is ciphertext, not plaintext
+        }
         }
         break;
     case OFB: {

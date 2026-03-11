@@ -26,6 +26,8 @@ private slots:
     void CBC128Crypt();
     void CBC128Decrypt();
 
+    void CFB128KnownAnswer();
+
     void CFB256String();
 
     void CFB256SmallSizeText();
