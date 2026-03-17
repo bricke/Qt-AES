@@ -295,7 +295,7 @@ QByteArray QAESEncryption::expandKey(const QByteArray &key, bool isEncryptionKey
               QByteArray expKey;
               expKey.resize(aes128.expandedKey);
               memcpy(expKey.data(), (char*) aesKey.KEY, aes128.expandedKey);
-              secureZero(aesKey.KEY, 240);
+              secureZero(aesKey.KEY, aes128.expandedKey);
               return expKey;
           }
               break;
@@ -311,7 +311,7 @@ QByteArray QAESEncryption::expandKey(const QByteArray &key, bool isEncryptionKey
               QByteArray expKey;
               expKey.resize(aes192.expandedKey);
               memcpy(expKey.data(), (char*) aesKey.KEY, aes192.expandedKey);
-              secureZero(aesKey.KEY, 240);
+              secureZero(aesKey.KEY, aes192.expandedKey);
               return expKey;
           }
               break;
@@ -327,7 +327,7 @@ QByteArray QAESEncryption::expandKey(const QByteArray &key, bool isEncryptionKey
               QByteArray expKey;
               expKey.resize(aes256.expandedKey);
               memcpy(expKey.data(), (char*) aesKey.KEY, aes256.expandedKey);
-              secureZero(aesKey.KEY, 240);
+              secureZero(aesKey.KEY, aes256.expandedKey);
               return expKey;
           }
               break;
