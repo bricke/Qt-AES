@@ -1,0 +1,42 @@
+name: CI (OpenSSL Cross-check)
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  crosscheck:
+    name: OpenSSL Cross-check — Qt ${{ matrix.qt_version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - qt_version: "6.7.0"
+          - qt_version: "5.15.2"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ matrix.qt_version }}
+          cache: true
+
+      - name: Install OpenSSL
+        run: sudo apt-get install -y libssl-dev
+
+      - name: Configure
+        run: >
+          cmake -B build
+          -DQTAES_ENABLE_TESTS=ON
+          -DQTAES_ENABLE_OPENSSL_CROSS_CHECK=ON
+          -DQTAES_ENABLE_WERROR=ON
+          -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --parallel --config Release
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure -C Release

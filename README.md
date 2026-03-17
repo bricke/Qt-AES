@@ -8,6 +8,7 @@
 [![CI (AES-NI)](https://github.com/bricke/Qt-AES/actions/workflows/ci-aesni.yml/badge.svg)](https://github.com/bricke/Qt-AES/actions/workflows/ci-aesni.yml)
 [![CI (Sanitizers)](https://github.com/bricke/Qt-AES/actions/workflows/ci-sanitizers.yml/badge.svg)](https://github.com/bricke/Qt-AES/actions/workflows/ci-sanitizers.yml)
 [![CI (Fuzzing)](https://github.com/bricke/Qt-AES/actions/workflows/ci-fuzzing.yml/badge.svg)](https://github.com/bricke/Qt-AES/actions/workflows/ci-fuzzing.yml)
+[![CI (OpenSSL Cross-check)](https://github.com/bricke/Qt-AES/actions/workflows/ci-openssl-crosscheck.yml/badge.svg)](https://github.com/bricke/Qt-AES/actions/workflows/ci-openssl-crosscheck.yml)
 [![License: Unlicense](https://img.shields.io/badge/license-Unlicense-blue.svg)](http://unlicense.org/)
 
 AES-128 · AES-192 · AES-256 &nbsp;|&nbsp; ECB · CBC · CFB · OFB · CTR &nbsp;|&nbsp; PBKDF2 key derivation &nbsp;|&nbsp; Partial AES-NI support

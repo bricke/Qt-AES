@@ -11,7 +11,8 @@ option(QTAES_ENABLE_INSTALL    "${PROJECT_NAME}: Enable install"                
 option(QTAES_ENABLE_TESTS      "${PROJECT_NAME}: Enable tests"                           ${QTAES_STANDALONE_BUILD})
 option(QTAES_ENABLE_WERROR     "${PROJECT_NAME}: Treat warnings as errors"               OFF)
 option(QTAES_ENABLE_SANITIZERS "${PROJECT_NAME}: Enable AddressSanitizer + UBSan"        OFF)
-option(QTAES_ENABLE_FUZZING    "${PROJECT_NAME}: Build libFuzzer fuzz target (Clang only)" OFF)
+option(QTAES_ENABLE_FUZZING             "${PROJECT_NAME}: Build libFuzzer fuzz target (Clang only)" OFF)
+option(QTAES_ENABLE_OPENSSL_CROSS_CHECK "${PROJECT_NAME}: Build OpenSSL interop cross-check tests"   OFF)
 
 # GNUInstallDirs is needed for CMAKE_INSTALL_* variables used in
 # target_include_directories and the install() calls below.
@@ -42,7 +43,7 @@ find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
 set(QT_PACKAGE_NAME Qt${QT_VERSION_MAJOR})
 
 set(QT_COMPS Core)
-if(QTAES_ENABLE_TESTS)
+if(QTAES_ENABLE_TESTS OR QTAES_ENABLE_OPENSSL_CROSS_CHECK)
     list(APPEND QT_COMPS Test)
 endif()
 find_package(${QT_PACKAGE_NAME} REQUIRED COMPONENTS ${QT_COMPS})
@@ -173,6 +174,34 @@ if(QTAES_ENABLE_FUZZING)
     target_compile_options(QtAES   PRIVATE ${_QTAES_FUZZ_FLAGS})
     target_compile_options(fuzz_encrypt PRIVATE ${_QTAES_FUZZ_FLAGS})
     target_link_options   (fuzz_encrypt PRIVATE ${_QTAES_FUZZ_FLAGS})
+endif()
+
+if(QTAES_ENABLE_OPENSSL_CROSS_CHECK)
+    find_package(OpenSSL REQUIRED)
+
+    add_executable(AESCrossCheck)
+
+    set_target_properties(AESCrossCheck PROPERTIES AUTOMOC ON)
+
+    target_sources(AESCrossCheck
+        PRIVATE
+            unit_test/aes_openssl_crosscheck_main.cpp
+            unit_test/aes_openssl_crosscheck.cpp
+            unit_test/aes_openssl_crosscheck.h)
+
+    target_link_libraries(AESCrossCheck
+        PRIVATE
+            QtAES
+            ${QT_PACKAGE_NAME}::Test
+            OpenSSL::Crypto)
+
+    if(NOT QTAES_ENABLE_TESTS)
+        enable_testing()
+    endif()
+
+    add_test(
+        NAME AESCrossCheck
+        COMMAND AESCrossCheck)
 endif()
 
 if(QTAES_ENABLE_INSTALL)
