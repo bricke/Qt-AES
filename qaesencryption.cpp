@@ -202,6 +202,18 @@ QByteArray QAESEncryption::generateKey(const QByteArray &password, const QByteAr
  * End Local functions
  * */
 
+namespace {
+struct AesParams { int nk, keylen, nr, expandedKey, userKeySize; };
+static const AesParams kAesParams[] = {
+    {4, 16, 10, 176, 128},  // AES_128
+    {6, 24, 12, 208, 192},  // AES_192
+    {8, 32, 14, 240, 256},  // AES_256
+};
+inline const AesParams& aesParams(int level) {
+    return kAesParams[(level >= 0 && level <= 2) ? level : 0];
+}
+} // namespace
+
 QAESEncryption::QAESEncryption(Aes level, Mode mode,
                                Padding padding)
     : m_nb(4), m_blocklen(16), m_level(level), m_mode(mode), m_padding(padding)
@@ -211,42 +223,11 @@ QAESEncryption::QAESEncryption(Aes level, Mode mode,
     m_aesNIAvailable = check_aesni_support();
 #endif
 
-    switch (level)
-    {
-    case AES_128: {
-        AES128 aes;
-        m_nk = aes.nk;
-        m_keyLen = aes.keylen;
-        m_nr = aes.nr;
-        m_expandedKey = aes.expandedKey;
-        }
-        break;
-    case AES_192: {
-        AES192 aes;
-        m_nk = aes.nk;
-        m_keyLen = aes.keylen;
-        m_nr = aes.nr;
-        m_expandedKey = aes.expandedKey;
-        }
-        break;
-    case AES_256: {
-        AES256 aes;
-        m_nk = aes.nk;
-        m_keyLen = aes.keylen;
-        m_nr = aes.nr;
-        m_expandedKey = aes.expandedKey;
-        }
-        break;
-    default: {
-        AES128 aes;
-        m_nk = aes.nk;
-        m_keyLen = aes.keylen;
-        m_nr = aes.nr;
-        m_expandedKey = aes.expandedKey;
-        }
-        break;
-    }
-
+    const AesParams& p = aesParams(level);
+    m_nk          = p.nk;
+    m_keyLen      = p.keylen;
+    m_nr          = p.nr;
+    m_expandedKey = p.expandedKey;
 }
 QByteArray QAESEncryption::getPadding(int currSize, int alignment)
 {
@@ -281,61 +262,18 @@ QByteArray QAESEncryption::expandKey(const QByteArray &key, bool isEncryptionKey
     Q_UNUSED(isEncryptionKey)
 
 #ifdef USE_INTEL_AES_IF_AVAILABLE
-    if (m_aesNIAvailable){
-          switch(m_level) {
-          case AES_128: {
-              AES128 aes128;
-              AES_KEY aesKey;
-              if(isEncryptionKey){
-                  AES_set_encrypt_key((unsigned char*) key.constData(), aes128.userKeySize, &aesKey);
-              }else{
-                  AES_set_decrypt_key((unsigned char*) key.constData(), aes128.userKeySize, &aesKey);
-              }
-
-              QByteArray expKey;
-              expKey.resize(aes128.expandedKey);
-              memcpy(expKey.data(), (char*) aesKey.KEY, aes128.expandedKey);
-              secureZero(aesKey.KEY, aes128.expandedKey);
-              return expKey;
-          }
-              break;
-          case AES_192: {
-              AES192 aes192;
-              AES_KEY aesKey;
-              if(isEncryptionKey){
-                  AES_set_encrypt_key((unsigned char*) key.constData(), aes192.userKeySize, &aesKey);
-              }else{
-                  AES_set_decrypt_key((unsigned char*) key.constData(), aes192.userKeySize, &aesKey);
-              }
-
-              QByteArray expKey;
-              expKey.resize(aes192.expandedKey);
-              memcpy(expKey.data(), (char*) aesKey.KEY, aes192.expandedKey);
-              secureZero(aesKey.KEY, aes192.expandedKey);
-              return expKey;
-          }
-              break;
-          case AES_256: {
-              AES256 aes256;
-              AES_KEY aesKey;
-              if(isEncryptionKey){
-                  AES_set_encrypt_key((unsigned char*) key.constData(), aes256.userKeySize, &aesKey);
-              }else{
-                  AES_set_decrypt_key((unsigned char*) key.constData(), aes256.userKeySize, &aesKey);
-              }
-
-              QByteArray expKey;
-              expKey.resize(aes256.expandedKey);
-              memcpy(expKey.data(), (char*) aesKey.KEY, aes256.expandedKey);
-              secureZero(aesKey.KEY, aes256.expandedKey);
-              return expKey;
-          }
-              break;
-          default:
-              return QByteArray();
-              break;
-          }
-      } else
+    if (m_aesNIAvailable) {
+        const AesParams& p = aesParams(m_level);
+        AES_KEY aesKey;
+        if (isEncryptionKey)
+            AES_set_encrypt_key((unsigned char*) key.constData(), p.userKeySize, &aesKey);
+        else
+            AES_set_decrypt_key((unsigned char*) key.constData(), p.userKeySize, &aesKey);
+        QByteArray expKey(p.expandedKey, 0);
+        memcpy(expKey.data(), (char*) aesKey.KEY, p.expandedKey);
+        secureZero(aesKey.KEY, p.expandedKey);
+        return expKey;
+    } else
 #endif
   {
 

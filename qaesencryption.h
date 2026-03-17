@@ -180,30 +180,6 @@ private:
     int m_padding;
     bool m_aesNIAvailable;
 
-    struct AES256{
-        int nk = 8;
-        int keylen = 32;
-        int nr = 14;
-        int expandedKey = 240;
-        int userKeySize = 256;
-    };
-
-    struct AES192{
-        int nk = 6;
-        int keylen = 24;
-        int nr = 12;
-        int expandedKey = 208; // (Nr+1)*Nb*4 = 13*16 = 208 bytes
-        int userKeySize = 192;
-    };
-
-    struct AES128{
-        int nk = 4;
-        int keylen = 16;
-        int nr = 10;
-        int expandedKey = 176;
-        int userKeySize = 128;
-    };
-
     QByteArray expandKey(const QByteArray &key, bool isEncryptionKey);
 
     quint8 getSBoxValue(quint8 num){return sbox[num];}
