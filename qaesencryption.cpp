@@ -595,6 +595,35 @@ QByteArray QAESEncryption::invCipher(const QByteArray &expKey, const QByteArray 
 }
 
 
+// OFB and CTR are symmetric (encrypt == decrypt). A single implementation
+// is shared by encode() and decode() to avoid duplication and divergence.
+QByteArray QAESEncryption::xcryptOFB(const QByteArray &input, const QByteArray &expandedKey, const QByteArray &iv)
+{
+    QByteArray ofbTemp;
+    ofbTemp.append(cipher(expandedKey, iv));
+    for (int i = m_blocklen; i < input.size(); i += m_blocklen)
+        ofbTemp.append(cipher(expandedKey, ofbTemp.right(m_blocklen)));
+    return byteXor(input, ofbTemp);
+}
+
+QByteArray QAESEncryption::xcryptCTR(const QByteArray &input, const QByteArray &expandedKey, const QByteArray &iv)
+{
+    QByteArray result;
+    QByteArray counterBlock(iv);
+    for (int i = 0; i < input.size(); i += m_blocklen) {
+        QByteArray keyStream = cipher(expandedKey, counterBlock);
+        int blockSize = qMin(m_blocklen, input.size() - i);
+        result.append(byteXor(input.mid(i, blockSize), keyStream.left(blockSize)));
+        // Increment counter as a 128-bit big-endian integer (byte[15] is least significant).
+        unsigned char *ctr = reinterpret_cast<unsigned char*>(counterBlock.data());
+        for (int j = m_blocklen - 1; j >= 0; --j) {
+            if (++ctr[j] != 0)
+                break;
+        }
+    }
+    return result;
+}
+
 QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &key, const QByteArray &iv, bool *ok)
 {
     if (ok) *ok = false;
@@ -696,12 +725,7 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
             break;
         }
 #endif
-        QByteArray ofbTemp;
-        ofbTemp.append(cipher(expandedKey, iv));
-        for (int i=m_blocklen; i < alignedText.size(); i += m_blocklen){
-            ofbTemp.append(cipher(expandedKey, ofbTemp.right(m_blocklen)));
-        }
-        result.append(byteXor(alignedText, ofbTemp));
+        result.append(xcryptOFB(alignedText, expandedKey, iv));
     }
     break;
     case CTR: {
@@ -719,20 +743,7 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
             break;
         }
 #endif
-        // Software CTR: encrypt each counter block to produce a keystream block,
-        // XOR with plaintext. Partial last block is handled by byteXor's min-size logic.
-        QByteArray counterBlock(iv);
-        for (int i = 0; i < alignedText.size(); i += m_blocklen) {
-            QByteArray keyStream = cipher(expandedKey, counterBlock);
-            int blockSize = qMin(m_blocklen, alignedText.size() - i);
-            result.append(byteXor(alignedText.mid(i, blockSize), keyStream.left(blockSize)));
-            // Increment counter as a 128-bit big-endian integer (byte[15] is least significant).
-            unsigned char *ctr = reinterpret_cast<unsigned char*>(counterBlock.data());
-            for (int j = m_blocklen - 1; j >= 0; --j) {
-                if (++ctr[j] != 0)
-                    break;
-            }
-        }
+        result.append(xcryptCTR(alignedText, expandedKey, iv));
     }
     break;
     default: break;
@@ -853,12 +864,7 @@ QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &k
             break;
         }
 #endif
-        QByteArray ofbTemp;
-        ofbTemp.append(cipher(expandedKey, iv));
-        for (int i=m_blocklen; i < rawText.size(); i += m_blocklen){
-            ofbTemp.append(cipher(expandedKey, ofbTemp.right(m_blocklen)));
-        }
-        ret.append(byteXor(rawText, ofbTemp));
+        ret.append(xcryptOFB(rawText, expandedKey, iv));
     }
         break;
     case CTR: {
@@ -877,17 +883,7 @@ QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &k
             break;
         }
 #endif
-        QByteArray counterBlock(iv);
-        for (int i = 0; i < rawText.size(); i += m_blocklen) {
-            QByteArray keyStream = cipher(expandedKey, counterBlock);
-            int blockSize = qMin(m_blocklen, rawText.size() - i);
-            ret.append(byteXor(rawText.mid(i, blockSize), keyStream.left(blockSize)));
-            unsigned char *ctr = reinterpret_cast<unsigned char*>(counterBlock.data());
-            for (int j = m_blocklen - 1; j >= 0; --j) {
-                if (++ctr[j] != 0)
-                    break;
-            }
-        }
+        ret.append(xcryptCTR(rawText, expandedKey, iv));
     }
         break;
     default:
