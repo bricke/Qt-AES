@@ -621,15 +621,11 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
     case ECB: {
 #ifdef USE_INTEL_AES_IF_AVAILABLE
         if (m_aesNIAvailable){
-            // Fixed-size buffer: AES key schedule is at most 240 bytes (AES-256, 15 * 16).
-            char expKey[240];
-            memcpy(expKey, expandedKey.data(), expandedKey.size());
-
             result.resize(alignedText.size());
             AES_ECB_encrypt((unsigned char*) alignedText.constData(),
                             (unsigned char*) result.data(),
                             alignedText.size(),
-                            expKey,
+                            expandedKey.constData(),
                             m_nr);
             break;
         }
@@ -641,19 +637,14 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
     case CBC: {
 #ifdef USE_INTEL_AES_IF_AVAILABLE
         if (m_aesNIAvailable){
-            // Fixed-size buffers — IV is always one AES block (16 bytes);
-            // key schedule is at most 240 bytes.
             quint8 ivec[16];
-            memcpy(ivec, iv.data(), iv.size());
-            char expKey[240];
-            memcpy(expKey, expandedKey.data(), expandedKey.size());
-
+            memcpy(ivec, iv.constData(), 16);
             result.resize(alignedText.size());
             AES_CBC_encrypt((unsigned char*) alignedText.constData(),
                             (unsigned char*) result.data(),
                             ivec,
                             alignedText.size(),
-                            expKey,
+                            expandedKey.constData(),
                             m_nr);
             break;
         }
@@ -670,15 +661,13 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
 #ifdef USE_INTEL_AES_IF_AVAILABLE
         if (m_aesNIAvailable) {
             quint8 ivec[16];
-            memcpy(ivec, iv.data(), iv.size());
-            char expKey[240];
-            memcpy(expKey, expandedKey.data(), expandedKey.size());
+            memcpy(ivec, iv.constData(), 16);
             result.resize(alignedText.size());
             AES_CFB_encrypt((unsigned char*) alignedText.constData(),
                             (unsigned char*) result.data(),
                             ivec,
                             alignedText.size(),
-                            expKey,
+                            expandedKey.constData(),
                             m_nr);
             break;
         }
@@ -696,15 +685,13 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
 #ifdef USE_INTEL_AES_IF_AVAILABLE
         if (m_aesNIAvailable) {
             quint8 ivec[16];
-            memcpy(ivec, iv.data(), iv.size());
-            char expKey[240];
-            memcpy(expKey, expandedKey.data(), expandedKey.size());
+            memcpy(ivec, iv.constData(), 16);
             result.resize(alignedText.size());
             AES_OFB_xcrypt((unsigned char*) alignedText.constData(),
                            (unsigned char*) result.data(),
                            ivec,
                            alignedText.size(),
-                           expKey,
+                           expandedKey.constData(),
                            m_nr);
             break;
         }
@@ -721,15 +708,13 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
 #ifdef USE_INTEL_AES_IF_AVAILABLE
         if (m_aesNIAvailable) {
             quint8 ivec[16];
-            memcpy(ivec, iv.data(), iv.size());
-            char expKey[240];
-            memcpy(expKey, expandedKey.data(), expandedKey.size());
+            memcpy(ivec, iv.constData(), 16);
             result.resize(alignedText.size());
             AES_CTR_xcrypt((unsigned char*) alignedText.constData(),
                            (unsigned char*) result.data(),
                            ivec,
                            alignedText.size(),
-                           expKey,
+                           expandedKey.constData(),
                            m_nr);
             break;
         }
@@ -793,15 +778,11 @@ QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &k
     case ECB:
 #ifdef USE_INTEL_AES_IF_AVAILABLE
         if (m_aesNIAvailable){
-            // Fixed-size buffer: AES key schedule is at most 240 bytes (AES-256, 15 * 16).
-            char expKey[240];
-            memcpy(expKey, expandedKey.data(), expandedKey.size());
             ret.resize(rawText.size());
-
             AES_ECB_decrypt((unsigned char*) rawText.constData(),
                             (unsigned char*) ret.data(),
                             rawText.size(),
-                            expKey,
+                            expandedKey.constData(),
                             m_nr);
             break;
         }
@@ -812,19 +793,14 @@ QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &k
     case CBC:
 #ifdef USE_INTEL_AES_IF_AVAILABLE
         if (m_aesNIAvailable){
-            // Fixed-size buffers — IV is always one AES block (16 bytes);
-            // key schedule is at most 240 bytes.
             quint8 ivec[16];
-            memcpy(ivec, iv.constData(), iv.size());
-            char expKey[240];
-            memcpy(expKey, expandedKey.data(), expandedKey.size());
+            memcpy(ivec, iv.constData(), 16);
             ret.resize(rawText.size());
-
             AES_CBC_decrypt((unsigned char*) rawText.constData(),
                             (unsigned char*) ret.data(),
                             ivec,
                             rawText.size(),
-                            expKey,
+                            expandedKey.constData(),
                             m_nr);
             break;
         }
@@ -842,15 +818,13 @@ QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &k
 #ifdef USE_INTEL_AES_IF_AVAILABLE
         if (m_aesNIAvailable) {
             quint8 ivec[16];
-            memcpy(ivec, iv.constData(), iv.size());
-            char expKey[240];
-            memcpy(expKey, expandedKey.data(), expandedKey.size());
+            memcpy(ivec, iv.constData(), 16);
             ret.resize(rawText.size());
             AES_CFB_decrypt((unsigned char*) rawText.constData(),
                             (unsigned char*) ret.data(),
                             ivec,
                             rawText.size(),
-                            expKey,
+                            expandedKey.constData(),
                             m_nr);
             break;
         }
@@ -868,15 +842,13 @@ QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &k
 #ifdef USE_INTEL_AES_IF_AVAILABLE
         if (m_aesNIAvailable) {
             quint8 ivec[16];
-            memcpy(ivec, iv.constData(), iv.size());
-            char expKey[240];
-            memcpy(expKey, expandedKey.data(), expandedKey.size());
+            memcpy(ivec, iv.constData(), 16);
             ret.resize(rawText.size());
             AES_OFB_xcrypt((unsigned char*) rawText.constData(),
                            (unsigned char*) ret.data(),
                            ivec,
                            rawText.size(),
-                           expKey,
+                           expandedKey.constData(),
                            m_nr);
             break;
         }
@@ -894,15 +866,13 @@ QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &k
 #ifdef USE_INTEL_AES_IF_AVAILABLE
         if (m_aesNIAvailable) {
             quint8 ivec[16];
-            memcpy(ivec, iv.data(), iv.size());
-            char expKey[240];
-            memcpy(expKey, expandedKey.data(), expandedKey.size());
+            memcpy(ivec, iv.constData(), 16);
             ret.resize(rawText.size());
             AES_CTR_xcrypt((unsigned char*) rawText.constData(),
                            (unsigned char*) ret.data(),
                            ivec,
                            rawText.size(),
-                           expKey,
+                           expandedKey.constData(),
                            m_nr);
             break;
         }
