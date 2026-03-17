@@ -303,77 +303,29 @@ void AesTest::CFB256String()
     QCOMPARE(QString(decodedText), inputStr);
 }
 
-void AesTest::CFB256SmallSizeText()
+void AesTest::CFB256FileRoundTrip_data()
 {
-    QAESEncryption encryption(QAESEncryption::AES_256, QAESEncryption::CFB);
-
-    QFile textFile(":/unit_test/alices-in-wonderland.txt");
-    QByteArray input;
-    if (textFile.open(QFile::ReadOnly))
-        input = textFile.readAll();
-    else
-        QFAIL("File alices-in-wonderland.txt not found!");
-
-    QString key("123456789123");
-
-    QByteArray hashKey = QCryptographicHash::hash(key.toLocal8Bit(), QCryptographicHash::Sha256);
-    QByteArray encodeText = encryption.encode(input, hashKey, iv);
-    QByteArray decodedText = encryption.removePadding(encryption.decode(encodeText, hashKey, iv));
-    QCOMPARE(decodedText, input);
+    QTest::addColumn<QString>("resource");
+    QTest::newRow("small")   << QString(":/unit_test/alices-in-wonderland.txt");
+    QTest::newRow("medium")  << QString(":/unit_test/la-divina-commedia.txt");
+    QTest::newRow("large")   << QString(":/unit_test/moby-dick.txt");
+    QTest::newRow("xlarge")  << QString(":/unit_test/shakespeare-complete-works.txt");
 }
 
-void AesTest::CFB256MediumSizeText()
+void AesTest::CFB256FileRoundTrip()
 {
-    QAESEncryption encryption(QAESEncryption::AES_256, QAESEncryption::CFB);
+    QFETCH(QString, resource);
 
-    QFile textFile(":/unit_test/la-divina-commedia.txt");
+    QFile textFile(resource);
     QByteArray input;
     if (textFile.open(QFile::ReadOnly))
         input = textFile.readAll();
     else
-        QFAIL("File la-divina-commedia.txt not found!");
+        QFAIL(qPrintable("Resource not found: " + resource));
 
-    QString key("123456789123");
-
-    QByteArray hashKey = QCryptographicHash::hash(key.toLocal8Bit(), QCryptographicHash::Sha256);
-    QByteArray encodeText = encryption.encode(input, hashKey, iv);
-    QByteArray decodedText = encryption.removePadding(encryption.decode(encodeText, hashKey, iv));
-    QCOMPARE(decodedText, input);
-}
-
-void AesTest::CFB256LargeSizeText()
-{
     QAESEncryption encryption(QAESEncryption::AES_256, QAESEncryption::CFB);
-
-    QFile textFile(":/unit_test/moby-dick.txt");
-    QByteArray input;
-    if (textFile.open(QFile::ReadOnly))
-        input = textFile.readAll();
-    else
-        QFAIL("File moby-dick.txt not found!");
-
-    QString key("123456789123");
-
-    QByteArray hashKey = QCryptographicHash::hash(key.toLocal8Bit(), QCryptographicHash::Sha256);
-    QByteArray encodeText = encryption.encode(input, hashKey, iv);
-    QByteArray decodedText = encryption.removePadding(encryption.decode(encodeText, hashKey, iv));
-    QCOMPARE(decodedText, input);
-}
-
-void AesTest::CFB256XLargeSizeText()
-{
-    QAESEncryption encryption(QAESEncryption::AES_256, QAESEncryption::CFB);
-
-    QFile textFile(":/unit_test/shakespeare-complete-works.txt");
-    QByteArray input;
-    if (textFile.open(QFile::ReadOnly))
-        input = textFile.readAll();
-    else
-        QFAIL("File shakespeare-complete-works.txt not found!");
-
-    QString key("123456789123");
-
-    QByteArray hashKey = QCryptographicHash::hash(key.toLocal8Bit(), QCryptographicHash::Sha256);
+    QByteArray hashKey = QCryptographicHash::hash(QString("123456789123").toLocal8Bit(),
+                                                  QCryptographicHash::Sha256);
     QByteArray encodeText = encryption.encode(input, hashKey, iv);
     QByteArray decodedText = encryption.removePadding(encryption.decode(encodeText, hashKey, iv));
     QCOMPARE(decodedText, input);
