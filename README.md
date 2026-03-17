@@ -198,6 +198,155 @@ QString decrypted = QString(QAESEncryption::RemovePadding(
                                                 encrypted, hashKey, hashIV)));
 ```
 
+### Interoperability with OpenSSL CLI
+
+Qt-AES produces raw binary ciphertext that is byte-for-byte compatible with
+OpenSSL's `enc` command when the key, IV, and padding settings match.
+
+Two rules cover all cases:
+- **Block modes (ECB, CBC):** use `Padding::PKCS7` in Qt; OpenSSL applies PKCS7 by default (no extra flag needed).
+- **Stream modes (CFB, OFB, CTR):** use `Padding::NONE` in Qt; pass `-nopad` to OpenSSL.
+
+Always supply the raw hex key with `-K` (uppercase) and the IV with `-iv`.
+Never use `-pass` — that activates OpenSSL's own key-derivation and produces incompatible output.
+
+#### Qt → OpenSSL
+
+**AES-128-CBC** (block mode, PKCS7 padding)
+
+```cpp
+QByteArray key = QByteArray::fromHex("2b7e151628aed2a6abf7158809cf4f3c");
+QByteArray iv  = QByteArray::fromHex("000102030405060708090a0b0c0d0e0f");
+
+QAESEncryption enc(QAESEncryption::AES_128, QAESEncryption::CBC, QAESEncryption::PKCS7);
+QByteArray cipher = enc.encode("Hello, world!", key, iv);
+
+QFile f("cipher.bin");
+f.open(QFile::WriteOnly);
+f.write(cipher);
+```
+
+```sh
+openssl enc -aes-128-cbc -d \
+  -K 2b7e151628aed2a6abf7158809cf4f3c \
+  -iv 000102030405060708090a0b0c0d0e0f \
+  -in cipher.bin
+# → Hello, world!
+```
+
+**AES-256-CFB** (stream mode, no padding)
+
+```cpp
+QByteArray key = QByteArray::fromHex("603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4");
+QByteArray iv  = QByteArray::fromHex("000102030405060708090a0b0c0d0e0f");
+
+QAESEncryption enc(QAESEncryption::AES_256, QAESEncryption::CFB, QAESEncryption::NONE);
+QByteArray cipher = enc.encode("Hello, world!", key, iv);
+
+QFile f("cipher.bin");
+f.open(QFile::WriteOnly);
+f.write(cipher);
+```
+
+```sh
+# -aes-256-cfb is CFB128 (full-block feedback), which matches Qt-AES's CFB implementation
+openssl enc -aes-256-cfb -d -nopad \
+  -K 603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4 \
+  -iv 000102030405060708090a0b0c0d0e0f \
+  -in cipher.bin
+# → Hello, world!
+```
+
+**AES-192-OFB** (stream mode, no padding)
+
+```cpp
+QByteArray key = QByteArray::fromHex("8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b");
+QByteArray iv  = QByteArray::fromHex("000102030405060708090a0b0c0d0e0f");
+
+QAESEncryption enc(QAESEncryption::AES_192, QAESEncryption::OFB, QAESEncryption::NONE);
+QByteArray cipher = enc.encode("Hello, world!", key, iv);
+
+QFile f("cipher.bin");
+f.open(QFile::WriteOnly);
+f.write(cipher);
+```
+
+```sh
+openssl enc -aes-192-ofb -d -nopad \
+  -K 8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b \
+  -iv 000102030405060708090a0b0c0d0e0f \
+  -in cipher.bin
+# → Hello, world!
+```
+
+#### OpenSSL → Qt
+
+**AES-128-CBC** (block mode, PKCS7 padding)
+
+```sh
+printf 'Hello, world!' | openssl enc -aes-128-cbc \
+  -K 2b7e151628aed2a6abf7158809cf4f3c \
+  -iv 000102030405060708090a0b0c0d0e0f \
+  > cipher.bin
+```
+
+```cpp
+QByteArray key = QByteArray::fromHex("2b7e151628aed2a6abf7158809cf4f3c");
+QByteArray iv  = QByteArray::fromHex("000102030405060708090a0b0c0d0e0f");
+
+QFile f("cipher.bin");
+f.open(QFile::ReadOnly);
+QByteArray cipher = f.readAll();
+
+QAESEncryption enc(QAESEncryption::AES_128, QAESEncryption::CBC, QAESEncryption::PKCS7);
+QByteArray plain = enc.removePadding(enc.decode(cipher, key, iv));
+// plain == "Hello, world!"
+```
+
+**AES-256-CFB** (stream mode, no padding)
+
+```sh
+printf 'Hello, world!' | openssl enc -aes-256-cfb -nopad \
+  -K 603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4 \
+  -iv 000102030405060708090a0b0c0d0e0f \
+  > cipher.bin
+```
+
+```cpp
+QByteArray key = QByteArray::fromHex("603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4");
+QByteArray iv  = QByteArray::fromHex("000102030405060708090a0b0c0d0e0f");
+
+QFile f("cipher.bin");
+f.open(QFile::ReadOnly);
+QByteArray cipher = f.readAll();
+
+QAESEncryption enc(QAESEncryption::AES_256, QAESEncryption::CFB, QAESEncryption::NONE);
+QByteArray plain = enc.decode(cipher, key, iv);
+// plain == "Hello, world!"
+```
+
+**AES-192-OFB** (stream mode, no padding)
+
+```sh
+printf 'Hello, world!' | openssl enc -aes-192-ofb -nopad \
+  -K 8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b \
+  -iv 000102030405060708090a0b0c0d0e0f \
+  > cipher.bin
+```
+
+```cpp
+QByteArray key = QByteArray::fromHex("8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b");
+QByteArray iv  = QByteArray::fromHex("000102030405060708090a0b0c0d0e0f");
+
+QFile f("cipher.bin");
+f.open(QFile::ReadOnly);
+QByteArray cipher = f.readAll();
+
+QAESEncryption enc(QAESEncryption::AES_192, QAESEncryption::OFB, QAESEncryption::NONE);
+QByteArray plain = enc.decode(cipher, key, iv);
+// plain == "Hello, world!"
+```
+
 ---
 
 ## Thread Safety
