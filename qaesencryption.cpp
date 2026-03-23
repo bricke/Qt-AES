@@ -280,6 +280,7 @@ QByteArray QAESEncryption::expandKey(const QByteArray &key, bool isEncryptionKey
       int i, k;
       quint8 tempa[4]; // Used for the column/row operations
       QByteArray roundKey(key); // The first round key is the key itself.
+      roundKey.resize(m_expandedKey); // Pre-allocate to final size to avoid O(n²) insert shifts.
 
       // All other round keys are found from the previous round keys.
       //i == Nk
