@@ -280,6 +280,7 @@ QByteArray QAESEncryption::expandKey(const QByteArray &key, bool isEncryptionKey
       int i, k;
       quint8 tempa[4]; // Used for the column/row operations
       QByteArray roundKey(key); // The first round key is the key itself.
+      roundKey.resize(m_expandedKey); // Pre-allocate to final size to avoid O(n²) insert shifts.
 
       // All other round keys are found from the previous round keys.
       //i == Nk
@@ -319,10 +320,10 @@ QByteArray QAESEncryption::expandKey(const QByteArray &key, bool isEncryptionKey
             tempa[2] = getSBoxValue(tempa[2]);
             tempa[3] = getSBoxValue(tempa[3]);
         }
-        roundKey.insert(i * 4 + 0, (quint8) roundKey.at((i - m_nk) * 4 + 0) ^ tempa[0]);
-        roundKey.insert(i * 4 + 1, (quint8) roundKey.at((i - m_nk) * 4 + 1) ^ tempa[1]);
-        roundKey.insert(i * 4 + 2, (quint8) roundKey.at((i - m_nk) * 4 + 2) ^ tempa[2]);
-        roundKey.insert(i * 4 + 3, (quint8) roundKey.at((i - m_nk) * 4 + 3) ^ tempa[3]);
+        roundKey[i * 4 + 0] = (quint8) roundKey.at((i - m_nk) * 4 + 0) ^ tempa[0];
+        roundKey[i * 4 + 1] = (quint8) roundKey.at((i - m_nk) * 4 + 1) ^ tempa[1];
+        roundKey[i * 4 + 2] = (quint8) roundKey.at((i - m_nk) * 4 + 2) ^ tempa[2];
+        roundKey[i * 4 + 3] = (quint8) roundKey.at((i - m_nk) * 4 + 3) ^ tempa[3];
       }
       return roundKey;
   }
@@ -464,15 +465,11 @@ void QAESEncryption::invShiftRows(QByteArray &state)
 
 QByteArray QAESEncryption::byteXor(const QByteArray &a, const QByteArray &b)
 {
-  QByteArray::const_iterator it_a = a.begin();
-  QByteArray::const_iterator it_b = b.begin();
-  QByteArray ret;
-
-  //for(int i = 0; i < m_blocklen; i++)
-  for(int i = 0; i < std::min(a.size(), b.size()); i++)
-      ret.insert(i,it_a[i] ^ it_b[i]);
-
-  return ret;
+    const int size = std::min(a.size(), b.size());
+    QByteArray ret(size, 0);
+    for (int i = 0; i < size; i++)
+        ret[i] = a[i] ^ b[i];
+    return ret;
 }
 
 // Cipher is the main function that encrypts the PlainText.
