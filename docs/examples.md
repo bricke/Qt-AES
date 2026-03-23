@@ -4,6 +4,56 @@
 
 ---
 
+## Best Practices
+
+### Use a random IV for every encryption
+
+The IV must be **unique per encryption operation** for CBC, CFB, OFB, and CTR modes.
+Reusing an IV with the same key leaks information about the plaintext.
+Generate it with Qt's cryptographically secure random generator:
+
+```cpp
+QByteArray iv(16, 0);
+QRandomGenerator::system()->fillRange(
+    reinterpret_cast<quint32*>(iv.data()), iv.size() / sizeof(quint32));
+```
+
+The IV is **not secret** — store or transmit it alongside the ciphertext.
+
+### Store the IV with the ciphertext
+
+A common pattern is to prepend the IV so it travels with the ciphertext:
+
+```cpp
+// Encrypt
+QByteArray payload = iv + cipherText;   // store or send this
+
+// Decrypt
+QByteArray iv         = payload.left(16);
+QByteArray cipherText = payload.mid(16);
+```
+
+### Derive keys from passwords with PBKDF2
+
+Never use a raw password string as a key. Use `generateKey()` with a random salt and
+store the salt alongside the ciphertext (it is not secret):
+
+```cpp
+QByteArray salt(16, 0);
+QRandomGenerator::system()->fillRange(
+    reinterpret_cast<quint32*>(salt.data()), salt.size() / sizeof(quint32));
+
+QByteArray key = QAESEncryption::generateKey(password.toUtf8(), salt,
+                                             QAESEncryption::AES_256);
+```
+
+### Avoid ECB mode for non-trivial data
+
+ECB encrypts each block independently, so identical plaintext blocks produce identical
+ciphertext blocks — patterns in the data remain visible. Prefer CBC, CFB, OFB, or CTR.
+
+---
+
 ## Basic encrypt / decrypt
 
 ```cpp
