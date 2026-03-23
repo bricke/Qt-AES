@@ -54,7 +54,7 @@ QByteArray plain  = enc.removePadding(enc.decode(cipher, key, iv));
 |---|---|
 | Installation & CMake options | [docs/getting-started.md](docs/getting-started.md) |
 | API Reference | [docs/api-reference.md](docs/api-reference.md) |
-| Usage Examples | [docs/examples.md](docs/examples.md) |
+| Usage Examples & Best Practices | [docs/examples.md](docs/examples.md) |
 | AES-NI Acceleration | [docs/aesni.md](docs/aesni.md) |
 | Testing & Fuzzing | [docs/testing.md](docs/testing.md) |
 
