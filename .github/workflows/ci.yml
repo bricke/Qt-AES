@@ -21,6 +21,9 @@ jobs:
           - os: windows-latest
             qt_version: "6.7.0"
             qt_modules: ""
+          - os: windows-latest
+            qt_version: "5.15.2"
+            qt_modules: ""
           - os: macos-latest
             qt_version: "6.7.0"
             qt_modules: ""
