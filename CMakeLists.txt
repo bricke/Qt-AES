@@ -31,10 +31,24 @@ if(QTAES_STANDALONE_BUILD)
             -Wextra
             -pedantic
             $<$<BOOL:${QTAES_ENABLE_WERROR}>:-Werror>)
+
+        # Hardening flags for Release builds.
+        # -fstack-protector-strong: emit stack canaries for functions with
+        #   addressable local buffers — catches stack-based buffer overflows.
+        # -D_FORTIFY_SOURCE=2: enables glibc bounds-checking on string/memory
+        #   functions at both compile time and runtime.
+        # These are standard practice for security-sensitive libraries and have
+        # negligible performance impact.
+        add_compile_options(
+            $<$<CONFIG:Release,RelWithDebInfo>:-fstack-protector-strong>
+            $<$<CONFIG:Release,RelWithDebInfo>:-D_FORTIFY_SOURCE=2>)
     elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         add_compile_options(
             /W4
-            $<$<BOOL:${QTAES_ENABLE_WERROR}>:/WX>)
+            $<$<BOOL:${QTAES_ENABLE_WERROR}>:/WX>
+            # MSVC equivalent: enable basic security checks and SDL checks
+            $<$<CONFIG:Release,RelWithDebInfo>:/GS>
+            $<$<CONFIG:Release,RelWithDebInfo>:/sdl>)
     endif()
 endif()
 
