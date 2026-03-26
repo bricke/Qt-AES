@@ -13,6 +13,7 @@ option(QTAES_ENABLE_WERROR     "${PROJECT_NAME}: Treat warnings as errors"      
 option(QTAES_ENABLE_SANITIZERS "${PROJECT_NAME}: Enable AddressSanitizer + UBSan"        OFF)
 option(QTAES_ENABLE_FUZZING             "${PROJECT_NAME}: Build libFuzzer fuzz target (Clang only)" OFF)
 option(QTAES_ENABLE_OPENSSL_CROSS_CHECK "${PROJECT_NAME}: Build OpenSSL interop cross-check tests"   OFF)
+option(QTAES_CONSTANT_TIME_SBOX         "${PROJECT_NAME}: Use constant-time S-box (no table lookups)" OFF)
 
 # GNUInstallDirs is needed for CMAKE_INSTALL_* variables used in
 # target_include_directories and the install() calls below.
@@ -80,6 +81,10 @@ target_include_directories(QtAES
 target_compile_definitions(QtAES
     PRIVATE
         QT_DISABLE_DEPRECATED_BEFORE=0x060000)
+
+if(QTAES_CONSTANT_TIME_SBOX)
+    target_compile_definitions(QtAES PUBLIC QTAES_CONSTANT_TIME_SBOX)
+endif()
 
 if(QTAES_ENABLE_AESNI)
     # AES-NI uses x86 intrinsics and inline asm — reject unsupported architectures at
