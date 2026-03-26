@@ -329,10 +329,10 @@ QByteArray QAESEncryption::expandKey(const QByteArray &key, bool isEncryptionKey
             tempa[2] = getSBoxValue(tempa[2]);
             tempa[3] = getSBoxValue(tempa[3]);
         }
-        roundKey.insert(i * 4 + 0, static_cast<quint8>(roundKey.at((i - m_nk) * 4 + 0)) ^ tempa[0]);
-        roundKey.insert(i * 4 + 1, static_cast<quint8>(roundKey.at((i - m_nk) * 4 + 1)) ^ tempa[1]);
-        roundKey.insert(i * 4 + 2, static_cast<quint8>(roundKey.at((i - m_nk) * 4 + 2)) ^ tempa[2]);
-        roundKey.insert(i * 4 + 3, static_cast<quint8>(roundKey.at((i - m_nk) * 4 + 3)) ^ tempa[3]);
+        roundKey[i * 4 + 0] = static_cast<quint8>(roundKey.at((i - m_nk) * 4 + 0)) ^ tempa[0];
+        roundKey[i * 4 + 1] = static_cast<quint8>(roundKey.at((i - m_nk) * 4 + 1)) ^ tempa[1];
+        roundKey[i * 4 + 2] = static_cast<quint8>(roundKey.at((i - m_nk) * 4 + 2)) ^ tempa[2];
+        roundKey[i * 4 + 3] = static_cast<quint8>(roundKey.at((i - m_nk) * 4 + 3)) ^ tempa[3];
       }
       return roundKey;
   }
@@ -474,14 +474,11 @@ void QAESEncryption::invShiftRows(QByteArray &state)
 
 QByteArray QAESEncryption::byteXor(const QByteArray &a, const QByteArray &b)
 {
-  QByteArray::const_iterator it_a = a.begin();
-  QByteArray::const_iterator it_b = b.begin();
-  QByteArray ret;
-
-  for(int i = 0; i < std::min(a.size(), b.size()); i++)
-      ret.insert(i,it_a[i] ^ it_b[i]);
-
-  return ret;
+    const int n = std::min(a.size(), b.size());
+    QByteArray ret(n, 0);
+    for (int i = 0; i < n; i++)
+        ret[i] = static_cast<quint8>(a[i]) ^ static_cast<quint8>(b[i]);
+    return ret;
 }
 
 // Cipher is the main function that encrypts the PlainText.
@@ -584,12 +581,12 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
         return QByteArray();
     }
 
-        QByteArray expandedKey = expandKey(key, true);
-        QByteArray alignedText(rawText);
+    QByteArray expandedKey = expandKey(key, true);
+    QByteArray alignedText(rawText);
 
-        // CTR is a stream cipher — no padding required; all other modes need block alignment.
-        if (m_mode != CTR)
-            alignedText.append(getPadding(rawText.size(), m_blocklen));
+    // CTR is a stream cipher — no padding required; all other modes need block alignment.
+    if (m_mode != CTR)
+        alignedText.append(getPadding(rawText.size(), m_blocklen));
 
     QByteArray result;
     switch(m_mode)
