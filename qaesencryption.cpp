@@ -96,18 +96,27 @@ QByteArray QAESEncryption::RemovePadding(const QByteArray &rawText, QAESEncrypti
         // PKCS7 requires every padding byte to equal the padding length.
         // Validate before removing — silently stripping arbitrary bytes is a
         // security issue (enables padding oracle and data corruption attacks).
+        //
+        // Constant-time validation: the loop always inspects every byte in the
+        // last block regardless of whether an invalid byte is found early.
+        // An early return would create a measurable timing difference that an
+        // attacker could exploit via a padding oracle (Vaudenay 2002).
         const int len = ret.size();
         const quint8 padLen = static_cast<quint8>(ret.at(len - 1));
-        bool valid = (padLen >= 1 && padLen <= 16 && padLen <= len);
-        if (valid) {
-            for (int i = len - padLen; i < len; ++i) {
-                if (static_cast<quint8>(ret.at(i)) != padLen) {
-                    valid = false;
-                    break;
-                }
-            }
+        quint8 good = static_cast<quint8>((padLen >= 1) & (padLen <= 16) & (padLen <= len));
+        for (int i = 0; i < 16 && i < len; ++i) {
+            // Check byte at position (len - 1 - i).  It must equal padLen
+            // if it falls within the padding region (i < padLen).
+            const quint8 b = static_cast<quint8>(ret.at(len - 1 - i));
+            // inPad is 1 when this byte is in the padding region, 0 otherwise.
+            // The comparison uses unsigned arithmetic to avoid branches.
+            const quint8 inPad = static_cast<quint8>(static_cast<quint8>(i) < padLen);
+            // mismatch is non-zero when the byte differs from padLen.
+            const quint8 mismatch = static_cast<quint8>(b ^ padLen);
+            // Clear 'good' if a padding byte doesn't match (branchless).
+            good &= static_cast<quint8>(~(inPad & static_cast<quint8>(mismatch != 0)));
         }
-        if (valid) {
+        if (good & 1) {
             ret.remove(len - padLen, padLen);
         } else {
             qWarning("QAESEncryption::RemovePadding: invalid PKCS7 padding — buffer returned unchanged");
