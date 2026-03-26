@@ -52,6 +52,18 @@ QByteArray key = QAESEncryption::generateKey(password.toUtf8(), salt,
 ECB encrypts each block independently, so identical plaintext blocks produce identical
 ciphertext blocks — patterns in the data remain visible. Prefer CBC, CFB, OFB, or CTR.
 
+### Side-channel resistance
+
+The default software path uses lookup tables for the AES S-box, which are susceptible
+to CPU cache-timing attacks. For deployments where local side-channel resistance matters:
+
+- **Preferred:** enable AES-NI hardware acceleration (`-DQTAES_ENABLE_AESNI=ON`) — the
+  hardware instructions are inherently constant-time.
+- **Alternative:** enable the constant-time S-box (`-DQTAES_CONSTANT_TIME_SBOX=ON`) —
+  replaces table lookups with the Boyar-Peralta algebraic circuit (register-only
+  operations, no data-dependent memory accesses). This is slower than the table-based
+  path but works on all platforms.
+
 ---
 
 ## Basic encrypt / decrypt

@@ -21,7 +21,8 @@ cmake -B build \
   -DQTAES_ENABLE_WERROR=ON \            # Treat warnings as errors
   -DQTAES_ENABLE_SANITIZERS=ON \        # AddressSanitizer + UBSan (GCC/Clang only)
   -DQTAES_ENABLE_FUZZING=ON \           # libFuzzer fuzz target (Clang only)
-  -DQTAES_ENABLE_OPENSSL_CROSS_CHECK=ON # OpenSSL interop cross-check tests
+  -DQTAES_ENABLE_OPENSSL_CROSS_CHECK=ON \ # OpenSSL interop cross-check tests
+  -DQTAES_CONSTANT_TIME_SBOX=ON         # Side-channel resistant S-box (no table lookups)
 ```
 
 ---

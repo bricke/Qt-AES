@@ -98,6 +98,11 @@ private slots:
     void AesNiOFB256RoundTrip();
 #endif
 
+#ifdef QTAES_CONSTANT_TIME_SBOX
+    void CtSboxForwardMatchesTable();
+    void CtSboxInverseMatchesTable();
+#endif
+
     void cleanupTestCase(){}
 
 private:

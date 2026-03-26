@@ -12,6 +12,10 @@
 #include <QCryptographicHash>
 #include <QMessageAuthenticationCode>
 
+#ifdef QTAES_CONSTANT_TIME_SBOX
+#include "aes_ct_sbox.h"
+#endif
+
 #ifdef __linux__
 #ifndef __LP64__
 #define do_rdtsc _do_rdtsc
@@ -182,8 +186,13 @@ private:
 
     QByteArray expandKey(const QByteArray &key, bool isEncryptionKey);
 
+#ifdef QTAES_CONSTANT_TIME_SBOX
+    quint8 getSBoxValue(quint8 num){return AesCt::sbox(num);}
+    quint8 getSBoxInvert(quint8 num){return AesCt::invSbox(num);}
+#else
     quint8 getSBoxValue(quint8 num){return sbox[num];}
     quint8 getSBoxInvert(quint8 num){return rsbox[num];}
+#endif
 
     void addRoundKey(QByteArray &state, const quint8 round, const QByteArray &expKey);
     void subBytes(QByteArray &state);
