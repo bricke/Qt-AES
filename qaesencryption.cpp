@@ -622,6 +622,9 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
                             alignedText.size(),
                             expandedKey.constData(),
                             m_nr);
+            // Zero the stack copy of the IV — it contains chained block state
+            // that could theoretically be used to reconstruct plaintext blocks.
+            secureZero(ivec, sizeof(ivec));
             break;
         }
 #endif
@@ -645,6 +648,7 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
                             alignedText.size(),
                             expandedKey.constData(),
                             m_nr);
+            secureZero(ivec, sizeof(ivec));
             break;
         }
 #endif
@@ -669,6 +673,7 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
                            alignedText.size(),
                            expandedKey.constData(),
                            m_nr);
+            secureZero(ivec, sizeof(ivec));
             break;
         }
 #endif
@@ -687,6 +692,7 @@ QByteArray QAESEncryption::encode(const QByteArray &rawText, const QByteArray &k
                            alignedText.size(),
                            expandedKey.constData(),
                            m_nr);
+            secureZero(ivec, sizeof(ivec));
             break;
         }
 #endif
@@ -760,6 +766,7 @@ QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &k
                             rawText.size(),
                             expandedKey.constData(),
                             m_nr);
+            secureZero(ivec, sizeof(ivec));
             break;
         }
 #endif
@@ -784,6 +791,7 @@ QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &k
                             rawText.size(),
                             expandedKey.constData(),
                             m_nr);
+            secureZero(ivec, sizeof(ivec));
             break;
         }
 #endif
@@ -808,6 +816,7 @@ QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &k
                            rawText.size(),
                            expandedKey.constData(),
                            m_nr);
+            secureZero(ivec, sizeof(ivec));
             break;
         }
 #endif
@@ -827,6 +836,7 @@ QByteArray QAESEncryption::decode(const QByteArray &rawText, const QByteArray &k
                            rawText.size(),
                            expandedKey.constData(),
                            m_nr);
+            secureZero(ivec, sizeof(ivec));
             break;
         }
 #endif
