@@ -103,6 +103,9 @@ private slots:
     void CtSboxInverseMatchesTable();
 #endif
 
+    void EmptyInputECB();
+    void EmptyInputCBC();
+
     void cleanupTestCase(){}
 
 private:

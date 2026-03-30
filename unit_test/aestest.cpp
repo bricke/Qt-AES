@@ -877,3 +877,24 @@ void AesTest::CtSboxInverseMatchesTable()
         QCOMPARE(AesCt::invSbox(static_cast<quint8>(i)), expected[i]);
 }
 #endif
+
+void AesTest::EmptyInputECB()
+{
+    // Empty plaintext with PKCS7 padding must produce one full block of padding (16 bytes).
+    // This exercises the edge case where getPadding() fills an entire block.
+    QAESEncryption enc(QAESEncryption::AES_256, QAESEncryption::ECB, QAESEncryption::PKCS7);
+    QByteArray cipher = enc.encode(QByteArray(), key32);
+    QCOMPARE(cipher.size(), 16);
+    QByteArray decoded = enc.removePadding(enc.decode(cipher, key32));
+    QCOMPARE(decoded, QByteArray());
+}
+
+void AesTest::EmptyInputCBC()
+{
+    // Same check for CBC mode — empty plaintext round-trips correctly.
+    QAESEncryption enc(QAESEncryption::AES_256, QAESEncryption::CBC, QAESEncryption::PKCS7);
+    QByteArray cipher = enc.encode(QByteArray(), key32, iv);
+    QCOMPARE(cipher.size(), 16);
+    QByteArray decoded = enc.removePadding(enc.decode(cipher, key32, iv));
+    QCOMPARE(decoded, QByteArray());
+}
